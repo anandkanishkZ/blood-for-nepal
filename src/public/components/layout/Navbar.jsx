@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Menu, X, Droplets, Moon, Sun } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
 import LanguageSelector from '../common/LanguageSelector';
+import logo from '../../../assets/logo-transparent.png';
 
 const Navbar = ({ isDarkMode, toggleDarkMode }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -15,14 +16,18 @@ const Navbar = ({ isDarkMode, toggleDarkMode }) => {
   return (
     <nav className="sticky top-0 z-50 bg-white/60 dark:bg-gray-900/60 shadow-md backdrop-blur-md backdrop-saturate-150 border-b border-white/30 dark:border-gray-800/60 transition-colors duration-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16">
-          {/* Logo */}
+        <div className="flex justify-between h-16">          {/* Logo */}
           <div className="flex items-center">
             <Link to="/" className="flex items-center">
-              <Droplets className="h-8 w-8 text-red-600 dark:text-red-500" />
-              <span className="ml-2 text-xl font-bold text-gray-900 dark:text-white">
-                Blood For Nepal
-              </span>
+              <img 
+                src={logo} 
+                alt="Blood For Nepal Logo" 
+                className="h-12 w-12 object-contain"
+              />
+             <span className="ml-2 text-xl font-bold" style={{ color: '#820016' }}>
+  Blood For Nepal
+</span>
+
             </Link>
           </div>
 
