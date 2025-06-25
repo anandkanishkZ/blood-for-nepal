@@ -1,17 +1,37 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Menu, X, Droplets, Moon, Sun } from 'lucide-react';
+import { Menu, X, Droplets, Moon, Sun, User, LogIn, UserPlus } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
 import LanguageSelector from '../common/LanguageSelector';
 import logo from '../../../assets/logo-transparent.png';
 
 const Navbar = ({ isDarkMode, toggleDarkMode }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const userMenuRef = useRef(null);
   const { t } = useLanguage();
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
   };
+
+  const toggleUserMenu = () => {
+    setIsUserMenuOpen(!isUserMenuOpen);
+  };
+
+  // Close user menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
+        setIsUserMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   return (
     <nav className="sticky top-0 z-50 bg-white/60 dark:bg-gray-900/60 shadow-md backdrop-blur-md backdrop-saturate-150 border-b border-white/30 dark:border-gray-800/60 transition-colors duration-200">
@@ -47,9 +67,40 @@ const Navbar = ({ isDarkMode, toggleDarkMode }) => {
               className="text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20 px-3 py-2 rounded-md text-sm font-medium"
             >
               {t('navEmergency')}
-            </Link>
+            </Link>            <LanguageSelector />            {/* User Menu */}
+            <div className="relative" ref={userMenuRef}>
+              <button
+                onClick={toggleUserMenu}
+                className="ml-2 p-2 rounded-full text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800 transition-colors duration-200"
+                aria-label="User menu"
+              >
+                <User className="h-5 w-5" />
+              </button>
 
-            <LanguageSelector />
+              {/* User Dropdown Menu */}
+              {isUserMenuOpen && (
+                <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg ring-1 ring-black ring-opacity-5 z-50">
+                  <div className="py-1">
+                    <Link
+                      to="/login"
+                      className="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
+                      onClick={() => setIsUserMenuOpen(false)}
+                    >
+                      <LogIn className="h-4 w-4 mr-3" />
+                      Login
+                    </Link>
+                    <Link
+                      to="/register"
+                      className="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
+                      onClick={() => setIsUserMenuOpen(false)}
+                    >
+                      <UserPlus className="h-4 w-4 mr-3" />
+                      Register
+                    </Link>
+                  </div>
+                </div>
+              )}
+            </div>
 
             <button
               onClick={toggleDarkMode}
@@ -85,13 +136,30 @@ const Navbar = ({ isDarkMode, toggleDarkMode }) => {
             >
               {t(['navHome', 'navRegister', 'navRequest', 'navFind', 'navEducation'][idx])}
             </Link>
-          ))}
-          <Link
+          ))}          <Link
             to="/emergency"
             className="block px-3 py-2 rounded-md text-base font-medium text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
           >
             {t('navEmergency')}
           </Link>
+          
+          {/* Mobile User Menu */}
+          <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
+            <Link
+              to="/login"
+              className="flex items-center px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 dark:text-gray-300 dark:hover:text-blue-400 dark:hover:bg-gray-800"
+            >
+              <LogIn className="h-5 w-5 mr-3" />
+              Login
+            </Link>
+            <Link
+              to="/register"
+              className="flex items-center px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 dark:text-gray-300 dark:hover:text-blue-400 dark:hover:bg-gray-800"
+            >
+              <UserPlus className="h-5 w-5 mr-3" />
+              Register
+            </Link>
+          </div>
         </div>
       )}
     </nav>
