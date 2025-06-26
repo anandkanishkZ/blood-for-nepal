@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Navbar from './public/components/layout/Navbar';
 import Footer from './public/components/layout/Footer';
+import BackToTop from './public/components/common/BackToTop';
 import HomePage from './public/pages/HomePage';
 import LoginPage from './public/pages/LoginPage';
 import RegisterPage from './public/pages/RegisterPage';
@@ -35,6 +36,7 @@ function App() {
                 <Route path="*" element={<Navigate to="/" />} />
             </Routes>
             <Footer />
+            <BackToTop />
         </div>
     );
 }
