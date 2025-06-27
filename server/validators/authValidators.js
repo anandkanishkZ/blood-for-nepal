@@ -102,7 +102,12 @@ export const validateProfileUpdate = [
     .optional()
     .trim()
     .isLength({ max: 1000 })
-    .withMessage('Medical conditions must be less than 1000 characters')
+    .withMessage('Medical conditions must be less than 1000 characters'),
+
+  body('blood_type')
+    .optional()
+    .isIn(['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'])
+    .withMessage('Please select a valid blood type')
 ];
 
 // Validation rules for password change
