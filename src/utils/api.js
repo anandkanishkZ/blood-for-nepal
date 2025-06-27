@@ -159,6 +159,31 @@ export const authAPI = {
   changePassword: async (passwordData) => {
     return apiClient.put('/auth/change-password', passwordData);
   },
+
+  // Get all users (admin)
+  getAllUsers: async () => {
+    return apiClient.get('/auth/users');
+  },
+
+  // Block a user (admin)
+  blockUser: async (userId, block_note) => {
+    return apiClient.put(`/auth/users/${userId}/block`, { block_note });
+  },
+
+  // Unblock a user (admin)
+  unblockUser: async (userId) => {
+    return apiClient.put(`/auth/users/${userId}/unblock`);
+  },
+
+  // Impersonate a user (admin)
+  impersonateUser: async (userId) => {
+    return apiClient.post(`/auth/users/${userId}/impersonate`);
+  },
+
+  // Get admin dashboard stats (admin)
+  getAdminStats: async () => {
+    return apiClient.get('/auth/admin/stats');
+  },
 };
 
 // Health check

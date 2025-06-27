@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Menu, X, Droplets, Moon, Sun, User, LogIn, UserPlus, LogOut, UserCircle } from 'lucide-react';
+import { Menu, X, Droplets, Moon, Sun, User, LogIn, UserPlus, LogOut, UserCircle, Shield, CornerUpLeft } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
 import { useAuth } from '../../context/AuthContext';
 import { showToast } from '../../../utils/toast';
@@ -32,6 +32,18 @@ const Navbar = ({ isDarkMode, toggleDarkMode }) => {
     } catch (error) {
       console.error('Logout error:', error);
       showToast.error('Failed to logout. Please try again.');
+    }
+  };
+
+  const handleReturnToAdmin = () => {
+    const adminToken = localStorage.getItem('admin_impersonation_token');
+    if (adminToken) {
+      localStorage.setItem('token', adminToken);
+      localStorage.removeItem('admin_impersonation_token');
+      showToast.success('Returned to admin session.');
+      window.location.href = '/admin';
+    } else {
+      showToast.error('No admin session found.');
     }
   };
 
@@ -150,6 +162,16 @@ const Navbar = ({ isDarkMode, toggleDarkMode }) => {
                           <Droplets className="h-4 w-4 mr-3 text-gray-500" />
                           My Donations
                         </Link>
+                        {isAuthenticated && user?.role === 'admin' && (
+                          <Link
+                            to="/admin"
+                            className="flex items-center px-4 py-3 text-sm text-red-700 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-900 transition-all duration-300 font-semibold"
+                            onClick={() => setIsUserMenuOpen(false)}
+                          >
+                            <Shield className="h-4 w-4 mr-3 text-red-500" />
+                            Admin Panel
+                          </Link>
+                        )}
                         <div className="border-t border-gray-100/50 dark:border-gray-700/50 my-1"></div>
                         <button
                           onClick={handleLogout}
@@ -265,6 +287,16 @@ const Navbar = ({ isDarkMode, toggleDarkMode }) => {
                   <Droplets className="h-5 w-5 mr-3" />
                   My Donations
                 </Link>
+                {isAuthenticated && user?.role === 'admin' && (
+                  <Link
+                    to="/admin"
+                    className="flex items-center px-3 py-2 rounded-md text-base font-medium text-red-700 hover:bg-red-100 dark:text-red-300 hover:bg-red-900"
+                    onClick={() => setIsUserMenuOpen(false)}
+                  >
+                    <Shield className="h-5 w-5 mr-3" />
+                    Admin Panel
+                  </Link>
+                )}
                 <button
                   onClick={handleLogout}
                   className="flex items-center w-full px-3 py-2 rounded-md text-base font-medium text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/30 transition-all duration-300"
@@ -294,6 +326,19 @@ const Navbar = ({ isDarkMode, toggleDarkMode }) => {
             )}
           </div>
         </div>
+      )}
+
+      {/* Return to Admin Button */}
+      {typeof window !== 'undefined' && localStorage.getItem('admin_impersonation_token') && (
+        <button
+          onClick={handleReturnToAdmin}
+          className="fixed top-4 right-4 z-[100] flex items-center gap-2 px-4 py-2 bg-yellow-400 hover:bg-yellow-500 text-yellow-900 font-bold rounded-full shadow-lg border-2 border-yellow-600 transition-all animate-bounce"
+          title="Return to Admin Session"
+          style={{ boxShadow: '0 2px 16px 0 rgba(0,0,0,0.10)' }}
+        >
+          <CornerUpLeft className="w-5 h-5" />
+          Return to Admin
+        </button>
       )}
     </nav>
   );

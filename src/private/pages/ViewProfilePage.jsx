@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../../public/context/AuthContext";
 import { showToast } from "../../utils/toast";
 import { 
   User, 
@@ -409,9 +409,26 @@ const ViewProfilePage = () => {
     );
   }
 
+  // Show blocked warning
+  const isBlocked = user.is_active === false;
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8 px-4">
       <div className="max-w-4xl mx-auto">
+        {isBlocked && (
+          <div className="mb-6 p-4 bg-red-100 dark:bg-red-900 border border-red-400 dark:border-red-700 rounded-lg flex items-center gap-4 shadow-md">
+            <Shield className="w-8 h-8 text-red-600 dark:text-red-300" />
+            <div>
+              <h2 className="text-lg font-bold text-red-800 dark:text-red-200 mb-1">Your account has been blocked</h2>
+              <p className="text-sm text-red-700 dark:text-red-300 mb-1">You cannot access certain features until an admin unblocks your account.</p>
+              {user.block_note && (
+                <div className="mt-2 p-2 bg-red-200 dark:bg-red-800 rounded text-red-900 dark:text-red-100 text-sm">
+                  <span className="font-semibold">Reason:</span> {user.block_note}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
         {/* Header */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
           <div className="flex items-center justify-between">

@@ -259,3 +259,145 @@ export const changePassword = async (req, res, next) => {
     next(error);
   }
 };
+
+// @desc    Get all users (admin only)
+// @route   GET /api/v1/auth/users
+// @access  Private/Admin
+export const getAllUsers = async (req, res, next) => {
+  try {
+    const users = await User.findAll({
+      attributes: { exclude: ['password'] },
+      order: [['createdAt', 'DESC']]
+    });
+    res.status(200).json({
+      success: true,
+      data: { users }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Block a user (admin only)
+// @route   PUT /api/v1/auth/users/:id/block
+// @access  Private/Admin
+export const blockUser = async (req, res, next) => {
+  try {
+    const userId = req.params.id;
+    const { block_note } = req.body;
+
+    // Only allow blocking users, not admins
+    const user = await User.findByPk(userId);
+    if (!user) {
+      return next(new AppError('User not found', 404));
+    }
+    if (user.role !== 'user') {
+      return next(new AppError('Only regular users can be blocked.', 400));
+    }
+    if (user.is_active === false) {
+      return next(new AppError('User is already blocked.', 400));
+    }
+    if (!block_note || !block_note.trim()) {
+      return next(new AppError('Block note is required.', 400));
+    }
+
+    user.is_active = false;
+    user.block_note = block_note;
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'User has been blocked.',
+      data: { user }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Unblock a user (admin only)
+// @route   PUT /api/v1/auth/users/:id/unblock
+// @access  Private/Admin
+export const unblockUser = async (req, res, next) => {
+  try {
+    const userId = req.params.id;
+    // Only allow unblocking users, not admins
+    const user = await User.findByPk(userId);
+    if (!user) {
+      return next(new AppError('User not found', 404));
+    }
+    if (user.role !== 'user') {
+      return next(new AppError('Only regular users can be unblocked.', 400));
+    }
+    if (user.is_active === true) {
+      return next(new AppError('User is not blocked.', 400));
+    }
+    user.is_active = true;
+    user.block_note = null;
+    await user.save();
+    res.status(200).json({
+      success: true,
+      message: 'User has been unblocked.',
+      data: { user }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Impersonate a user (admin only)
+// @route   POST /api/v1/auth/users/:id/impersonate
+// @access  Private/Admin
+export const impersonateUser = async (req, res, next) => {
+  try {
+    const admin = req.user;
+    const userId = req.params.id;
+    if (admin.role !== 'admin') {
+      return next(new AppError('Only admins can impersonate users.', 403));
+    }
+    if (admin.id === userId) {
+      return next(new AppError('You are already logged in as this user.', 400));
+    }
+    const user = await User.findByPk(userId);
+    if (!user) {
+      return next(new AppError('User not found', 404));
+    }
+    // Optionally, prevent impersonating other admins
+    // if (user.role !== 'user') {
+    //   return next(new AppError('Can only impersonate regular users.', 400));
+    // }
+    // Generate a JWT for the target user
+    const token = generateToken(user.id);
+    // Log the impersonation (could be extended to DB/audit log)
+    console.log(`[IMPERSONATE] Admin ${admin.email} (${admin.id}) is impersonating user ${user.email} (${user.id})`);
+    res.status(200).json({
+      success: true,
+      message: `Impersonation token generated for user ${user.email}`,
+      data: { token, user }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Get admin dashboard stats
+// @route   GET /api/v1/auth/admin/stats
+// @access  Private/Admin
+export const getAdminStats = async (req, res, next) => {
+  try {
+    const totalUsers = await User.count();
+    const activeDonors = await User.count({ where: { is_donor: true, is_active: true } });
+    // TODO: Replace with real pending requests count from requests table
+    const pendingRequests = 0;
+    res.status(200).json({
+      success: true,
+      data: {
+        totalUsers,
+        activeDonors,
+        pendingRequests
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};

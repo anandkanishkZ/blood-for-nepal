@@ -117,6 +117,11 @@ class User extends Model {
         type: DataTypes.BOOLEAN,
         defaultValue: true
       },
+      block_note: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+        comment: 'Admin note for blocking user'
+      },
       last_donation_date: {
         type: DataTypes.DATEONLY,
         allowNull: true
