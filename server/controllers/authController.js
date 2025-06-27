@@ -186,7 +186,8 @@ export const updateProfile = async (req, res, next) => {
       'date_of_birth',
       'gender',
       'emergency_contact',
-      'medical_conditions'
+      'medical_conditions',
+      'blood_type'
     ];
 
     const updateData = {};
