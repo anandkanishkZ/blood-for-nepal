@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="./public/logo.png" alt="Blood For Nepal Logo" width="100%" height="120">
+  <img src="./public/logo.png" alt="Blood For Nepal Logo" width="100%" height="100%">
   
   # 🩸 Blood For Nepal
   
