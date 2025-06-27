@@ -103,3 +103,35 @@ body {
 .backdrop-saturate-150 {
   backdrop-filter: saturate(1.5);
 }
+
+/* React Toastify Professional Styling - Minimal Override */
+.Toastify__toast-container--top-right {
+  top: 80px !important;
+  right: 16px !important;
+}
+
+.Toastify__toast {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+  margin-bottom: 8px !important;
+}
+
+.Toastify__toast-body {
+  padding: 16px !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  line-height: 1.4 !important;
+}
+
+.Toastify__progress-bar {
+  height: 3px !important;
+}
+
+@media (max-width: 768px) {
+  .Toastify__toast-container--top-right {
+    left: 16px !important;
+    right: 16px !important;
+    top: 70px !important;
+  }
+}
