@@ -1,11 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
+import { ToastContainer } from 'react-toastify';
+import { AuthProvider } from './public/context/AuthContext';
 import Navbar from './public/components/layout/Navbar';
 import Footer from './public/components/layout/Footer';
 import BackToTop from './public/components/common/BackToTop';
 import HomePage from './public/pages/HomePage';
 import LoginPage from './public/pages/LoginPage';
 import RegisterPage from './public/pages/RegisterPage';
+import 'react-toastify/dist/ReactToastify.css';
 import './App.css';
 
 function App() {
@@ -22,10 +25,13 @@ function App() {
         }
     }, [isDarkMode]);
 
-    const toggleDarkMode = () => setIsDarkMode((prev) => !prev);    return (
-        <div>
-            <Navbar isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} />
-            <Routes>
+    const toggleDarkMode = () => setIsDarkMode((prev) => !prev);
+
+    return (
+        <AuthProvider>
+            <div>
+                <Navbar isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} />
+                <Routes>
                 <Route path="/" element={<HomePage />} />
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/register" element={<RegisterPage />} />
@@ -37,7 +43,22 @@ function App() {
             </Routes>
             <Footer />
             <BackToTop />
+            
+            {/* React Toastify Container with default professional styling */}
+            <ToastContainer
+                position="top-right"
+                autoClose={4000}
+                hideProgressBar={false}
+                newestOnTop={false}
+                closeOnClick
+                rtl={false}
+                pauseOnFocusLoss
+                draggable
+                pauseOnHover
+                theme={isDarkMode ? "dark" : "light"}
+            />
         </div>
+    </AuthProvider>
     );
 }
 

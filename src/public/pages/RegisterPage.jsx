@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff, User, UserPlus, Droplets } from 'lucide-react';
+import { showToast } from '../../utils/toast';
 import { useLanguage } from '../context/LanguageContext';
+import { useAuth } from '../context/AuthContext';
 import logo from '../../assets/logo-transparent.png';
 
 const RegisterPage = () => {
@@ -12,9 +14,32 @@ const RegisterPage = () => {
     bloodType: '',
     password: ''
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
   const { t } = useLanguage();
+  const { register, isAuthenticated, error, isLoading, clearError } = useAuth();
+  const navigate = useNavigate();
 
   const bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/', { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
+
+  // Clear error when component unmounts
+  useEffect(() => {
+    return () => clearError();
+  }, []); // Remove clearError dependency
+
+  // Clear error when user starts typing (only if there's an error)
+  useEffect(() => {
+    if (error && (formData.fullName || formData.email || formData.password || formData.bloodType)) {
+      clearError();
+    }
+  }, [formData.fullName, formData.email, formData.password, formData.bloodType, error]); // Only depend on form fields and error state
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -24,10 +49,29 @@ const RegisterPage = () => {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Handle registration logic here
-    console.log('Registration data:', formData);
+    
+    if (isSubmitting) return;
+    
+    setIsSubmitting(true);
+    
+    try {
+      console.log('Registration data being sent:', formData);
+      const result = await register(formData);
+      
+      if (result.success) {
+        showToast.register.success();
+        // Redirect will happen automatically due to useEffect above
+      } else {
+        showToast.register.error(result.error);
+      }
+    } catch (error) {
+      console.error('Registration error:', error);
+      showToast.register.error('An unexpected error occurred. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const togglePasswordVisibility = () => {
@@ -205,11 +249,24 @@ const RegisterPage = () => {
             {/* Submit Button */}
             <button
               type="submit"
-              className="w-full relative overflow-hidden bg-red-600 hover:bg-red-700 text-white font-semibold py-4 px-8 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:ring-offset-2 group"
+              disabled={isSubmitting || isLoading}
+              className="w-full relative overflow-hidden bg-red-600 hover:bg-red-700 text-white font-semibold py-4 px-8 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:ring-offset-2 group disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
             >
               <span className="relative z-10 flex items-center justify-center">
-                <UserPlus className="h-5 w-5 mr-2" />
-                Create Account
+                {isSubmitting || isLoading ? (
+                  <>
+                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Creating Account...
+                  </>
+                ) : (
+                  <>
+                    <UserPlus className="h-5 w-5 mr-2" />
+                    Create Account
+                  </>
+                )}
               </span>
               <div className="absolute inset-0 bg-red-700 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
             </button>
