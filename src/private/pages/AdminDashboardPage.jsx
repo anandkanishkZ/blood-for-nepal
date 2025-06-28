@@ -4,6 +4,7 @@ import StatsCard from '../../public/components/common/StatsCard';
 import logoTransparent from '../../assets/logo-transparent.png';
 import AdminSidebar from '../AdminSidebar';
 import { authAPI } from '../../utils/api';
+import { Users, Droplet, Clock, ArrowRight } from 'lucide-react';
 
 const AdminDashboardPage = ({ isDarkMode, toggleDarkMode }) => {
   const [stats, setStats] = useState({
@@ -36,9 +37,24 @@ const AdminDashboardPage = ({ isDarkMode, toggleDarkMode }) => {
   }, []);
 
   const statCards = [
-    { label: 'Total Users', value: stats.totalUsers, icon: '👥', color: 'bg-blue-500' },
-    { label: 'Active Donors', value: stats.activeDonors, icon: '🩸', color: 'bg-red-500' },
-    { label: 'Pending Requests', value: stats.pendingRequests, icon: '⏳', color: 'bg-yellow-500' },
+    { 
+      label: 'Total Users', 
+      value: stats.totalUsers, 
+      icon: <Users className="w-6 h-6" />, 
+      color: 'text-blue-500' 
+    },
+    { 
+      label: 'Active Donors', 
+      value: stats.activeDonors, 
+      icon: <Droplet className="w-6 h-6" />, 
+      color: 'text-red-500' 
+    },
+    { 
+      label: 'Pending Requests', 
+      value: stats.pendingRequests, 
+      icon: <Clock className="w-6 h-6" />, 
+      color: 'text-yellow-500' 
+    },
   ];
 
   return (
@@ -53,7 +69,7 @@ const AdminDashboardPage = ({ isDarkMode, toggleDarkMode }) => {
               key={stat.label}
               title={stat.label}
               value={loading ? '—' : stat.value}
-              icon={<span className={`text-2xl ${stat.color}`}>{stat.icon}</span>}
+              icon={<span className={stat.color}>{stat.icon}</span>}
             />
           ))}
         </div>
@@ -63,7 +79,10 @@ const AdminDashboardPage = ({ isDarkMode, toggleDarkMode }) => {
               <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-1">Users</h2>
               <p className="text-gray-600 dark:text-gray-400">View and manage all registered users</p>
             </div>
-            <span className="text-3xl text-blue-500 group-hover:scale-110 transition-transform">👥</span>
+            <div className="flex items-center gap-2 text-blue-500">
+              <Users className="w-8 h-8 group-hover:scale-110 transition-transform" />
+              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+            </div>
           </Link>
         </div>
       </main>

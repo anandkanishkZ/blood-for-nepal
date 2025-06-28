@@ -5,9 +5,13 @@ import { AuthProvider } from './public/context/AuthContext';
 import Navbar from './public/components/layout/Navbar';
 import Footer from './public/components/layout/Footer';
 import BackToTop from './public/components/common/BackToTop';
+import ScrollToTop from './public/components/common/ScrollToTop';
 import HomePage from './public/pages/HomePage';
 import LoginPage from './public/pages/LoginPage';
 import RegisterPage from './public/pages/RegisterPage';
+import DonorRegistrationPage from './public/pages/DonorRegistrationPage';
+import EducationPage from './public/pages/EducationPage';
+import EmergencyPage from './public/pages/EmergencyPage';
 import PrivateRoute from './private/PrivateRoute.jsx';
 import ViewProfilePage from './private/pages/ViewProfilePage.jsx';
 import AdminDashboardPage from './private/pages/AdminDashboardPage.jsx';
@@ -40,16 +44,18 @@ function App() {
     return (
         <AuthProvider>
             <div>
+                <ScrollToTop />
                 {!isAdminRoute && <Navbar isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} />}
                 <Routes>
                 <Route path="/" element={<HomePage />} />
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/register" element={<RegisterPage />} />
+                <Route path="/register-donor" element={<DonorRegistrationPage />} />
                 <Route path="/profile" element={<PrivateRoute><ViewProfilePage /></PrivateRoute>} />
                 <Route path="/request" element={<div className="min-h-screen flex items-center justify-center"><h1 className="text-2xl font-bold text-gray-900 dark:text-white">Blood Request Page - Coming Soon</h1></div>} />
                 <Route path="/find" element={<div className="min-h-screen flex items-center justify-center"><h1 className="text-2xl font-bold text-gray-900 dark:text-white">Find Donors Page - Coming Soon</h1></div>} />
-                <Route path="/education" element={<div className="min-h-screen flex items-center justify-center"><h1 className="text-2xl font-bold text-gray-900 dark:text-white">Education Page - Coming Soon</h1></div>} />
-                <Route path="/emergency" element={<div className="min-h-screen flex items-center justify-center"><h1 className="text-2xl font-bold text-red-600 dark:text-red-400">Emergency Blood Request - Coming Soon</h1></div>} />
+                <Route path="/education" element={<EducationPage />} />
+                <Route path="/emergency" element={<EmergencyPage />} />
                 <Route path="/admin" element={<PrivateRoute requiredRole="admin"><AdminDashboardPage isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} /></PrivateRoute>} />
                 <Route path="/admin/users" element={<PrivateRoute requiredRole="admin"><AdminUsersPage isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} /></PrivateRoute>} />
                 <Route path="*" element={<Navigate to="/" />} />

@@ -1,5 +1,6 @@
 import React from 'react';
 import { useLanguage } from '../../context/LanguageContext';
+import { TrendingUp, TrendingDown } from 'lucide-react';
 
 const StatsCard = ({
   title,
@@ -35,13 +36,18 @@ const StatsCard = ({
         <div className="bg-gray-50 dark:bg-gray-700 px-5 py-3">
           <div className="text-sm">
             <span
-              className={`font-medium ${
+              className={`font-medium flex items-center gap-1 ${
                 isPositiveChange
                   ? 'text-green-600 dark:text-green-400'
                   : 'text-red-600 dark:text-red-400'
               }`}
             >
-              {isPositiveChange ? '↑' : '↓'} {Math.abs(change)}%
+              {isPositiveChange ? (
+                <TrendingUp className="w-4 h-4" />
+              ) : (
+                <TrendingDown className="w-4 h-4" />
+              )}
+              {Math.abs(change)}%
             </span>{' '}
             <span className="text-gray-500 dark:text-gray-400">from last month</span>
           </div>

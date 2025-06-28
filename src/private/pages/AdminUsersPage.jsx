@@ -3,7 +3,7 @@ import { useLocation, Link } from 'react-router-dom';
 import { authAPI } from '../../utils/api';
 import logoTransparent from '../../assets/logo-transparent.png';
 import AdminSidebar from '../AdminSidebar';
-import { Search, Shield, Ban, X as XIcon, Info, Unlock, LogIn } from 'lucide-react';
+import { Search, Shield, Ban, X as XIcon, Info, Unlock, LogIn, Eye, UserCheck, UserX } from 'lucide-react';
 import { showToast } from '../../utils/toast';
 
 const USERS_PER_PAGE = 10;
@@ -19,6 +19,7 @@ const AdminUsersPage = ({ isDarkMode, toggleDarkMode }) => {
   const [blockNote, setBlockNote] = useState('');
   const [blocking, setBlocking] = useState(false);
   const [blockNoteModal, setBlockNoteModal] = useState({ open: false, user: null });
+  const [actionsModal, setActionsModal] = useState({ open: false, user: null });
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -230,31 +231,13 @@ const AdminUsersPage = ({ isDarkMode, toggleDarkMode }) => {
                           <td className="px-6 py-4 whitespace-nowrap text-gray-700 dark:text-gray-300 capitalize">{user.role}</td>
                           <td className="px-6 py-4 whitespace-nowrap text-gray-500 dark:text-gray-400">{user.createdAt ? new Date(user.createdAt).toLocaleDateString() : '-'}</td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            {user.role === 'user' && user.is_active !== false && (
-                              <button
-                                onClick={() => { setBlockModal({ open: true, user }); setBlockNote(''); }}
-                                className="flex items-center gap-1 px-3 py-1.5 rounded bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-200 border border-red-200 dark:border-red-700 hover:bg-red-200 dark:hover:bg-red-800 text-xs font-semibold transition"
-                              >
-                                <Ban className="w-4 h-4 mr-1" /> Block
-                              </button>
-                            )}
-                            {user.role === 'user' && user.is_active === false && (
-                              <button
-                                onClick={() => handleUnblockUser(user)}
-                                className="flex items-center gap-1 px-3 py-1.5 rounded bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-200 border border-green-200 dark:border-green-700 hover:bg-green-200 dark:hover:bg-green-800 text-xs font-semibold transition ml-2"
-                                disabled={blocking}
-                              >
-                                <Unlock className="w-4 h-4 mr-1" /> Unblock
-                              </button>
-                            )}
                             {user.role === 'user' && (
                               <button
-                                onClick={() => handleImpersonateUser(user)}
-                                className="flex items-center gap-1 px-3 py-1.5 rounded bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-200 border border-blue-200 dark:border-blue-700 hover:bg-blue-200 dark:hover:bg-blue-800 text-xs font-semibold transition ml-2"
-                                disabled={blocking}
-                                title="Login as this user"
+                                onClick={() => setActionsModal({ open: true, user })}
+                                className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-md hover:shadow-lg transition-all duration-200 transform hover:scale-105"
+                                title="View Actions"
                               >
-                                <LogIn className="w-4 h-4 mr-1" /> Login as User
+                                <Eye className="w-4 h-4" />
                               </button>
                             )}
                           </td>
@@ -293,6 +276,127 @@ const AdminUsersPage = ({ isDarkMode, toggleDarkMode }) => {
                 </button>
               </div>
             )}
+            
+            {/* Actions Modal */}
+            {actionsModal.open && actionsModal.user && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+                <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl p-0 w-full max-w-md mx-4 overflow-hidden border border-gray-200 dark:border-gray-700">
+                  {/* Modal Header */}
+                  <div className="bg-gradient-to-r from-blue-500 to-blue-600 px-6 py-4 text-white">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
+                          <Eye className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <h3 className="text-lg font-semibold">User Actions</h3>
+                          <p className="text-blue-100 text-sm">{actionsModal.user.full_name}</p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => setActionsModal({ open: false, user: null })}
+                        className="w-8 h-8 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center transition-colors"
+                        aria-label="Close actions modal"
+                      >
+                        <XIcon className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Modal Body */}
+                  <div className="p-6 space-y-4">
+                    <div className="text-center mb-6">
+                      <img
+                        src={actionsModal.user.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(actionsModal.user.full_name || 'User')}&background=F87171&color=fff`}
+                        alt={actionsModal.user.full_name}
+                        className="w-16 h-16 rounded-full mx-auto border-4 border-gray-200 dark:border-gray-700 shadow-lg"
+                      />
+                      <p className="mt-3 text-gray-600 dark:text-gray-400 text-sm">
+                        Choose an action to perform on this user
+                      </p>
+                    </div>
+
+                    <div className="space-y-3">
+                      {/* Block/Unblock Action */}
+                      {actionsModal.user.is_active !== false ? (
+                        <button
+                          onClick={() => {
+                            setBlockModal({ open: true, user: actionsModal.user });
+                            setBlockNote('');
+                            setActionsModal({ open: false, user: null });
+                          }}
+                          className="w-full flex items-center gap-4 p-4 rounded-xl bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 border border-red-200 dark:border-red-800 transition-all duration-200 group"
+                        >
+                          <div className="w-10 h-10 bg-red-100 dark:bg-red-900/40 rounded-full flex items-center justify-center group-hover:bg-red-200 dark:group-hover:bg-red-900/60 transition-colors">
+                            <UserX className="w-5 h-5 text-red-600 dark:text-red-400" />
+                          </div>
+                          <div className="text-left">
+                            <p className="font-medium text-red-700 dark:text-red-300">Block User</p>
+                            <p className="text-sm text-red-600 dark:text-red-400">Restrict user access</p>
+                          </div>
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => {
+                            handleUnblockUser(actionsModal.user);
+                            setActionsModal({ open: false, user: null });
+                          }}
+                          disabled={blocking}
+                          className="w-full flex items-center gap-4 p-4 rounded-xl bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/30 border border-green-200 dark:border-green-800 transition-all duration-200 group disabled:opacity-50"
+                        >
+                          <div className="w-10 h-10 bg-green-100 dark:bg-green-900/40 rounded-full flex items-center justify-center group-hover:bg-green-200 dark:group-hover:bg-green-900/60 transition-colors">
+                            <UserCheck className="w-5 h-5 text-green-600 dark:text-green-400" />
+                          </div>
+                          <div className="text-left">
+                            <p className="font-medium text-green-700 dark:text-green-300">Unblock User</p>
+                            <p className="text-sm text-green-600 dark:text-green-400">Restore user access</p>
+                          </div>
+                        </button>
+                      )}
+
+                      {/* Login as User Action */}
+                      <button
+                        onClick={() => {
+                          handleImpersonateUser(actionsModal.user);
+                          setActionsModal({ open: false, user: null });
+                        }}
+                        disabled={blocking}
+                        className="w-full flex items-center gap-4 p-4 rounded-xl bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30 border border-blue-200 dark:border-blue-800 transition-all duration-200 group disabled:opacity-50"
+                      >
+                        <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/40 rounded-full flex items-center justify-center group-hover:bg-blue-200 dark:group-hover:bg-blue-900/60 transition-colors">
+                          <LogIn className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                        </div>
+                        <div className="text-left">
+                          <p className="font-medium text-blue-700 dark:text-blue-300">Login as User</p>
+                          <p className="text-sm text-blue-600 dark:text-blue-400">Impersonate this user</p>
+                        </div>
+                      </button>
+                    </div>
+
+                    {/* User Status Info */}
+                    <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-gray-600 dark:text-gray-400">Current Status:</span>
+                        <span className={`font-medium px-2 py-1 rounded-full text-xs ${
+                          actionsModal.user.is_active !== false 
+                            ? 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300' 
+                            : 'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300'
+                        }`}>
+                          {actionsModal.user.is_active !== false ? 'Active' : 'Blocked'}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm mt-2">
+                        <span className="text-gray-600 dark:text-gray-400">Blood Type:</span>
+                        <span className="font-medium text-gray-900 dark:text-white">
+                          {actionsModal.user.blood_type || 'Not specified'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Block Modal */}
             {blockModal.open && (
               <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
