@@ -7,6 +7,18 @@ import { showToast } from '../../../utils/toast';
 import LanguageSelector from '../common/LanguageSelector';
 import logo from '../../../assets/logo-transparent.png';
 
+// Helper function to get full avatar URL (same as profile page)
+const getFullAvatarUrl = (avatarPath, bustCache = false) => {
+  if (!avatarPath) return null;
+  if (avatarPath.startsWith('http')) return avatarPath;
+  const baseUrl = import.meta.env.VITE_API_URL?.replace('/api/v1', '') || 'http://localhost:5000';
+  if (bustCache) {
+    const timestamp = new Date().getTime();
+    return `${baseUrl}${avatarPath}?t=${timestamp}`;
+  }
+  return `${baseUrl}${avatarPath}`;
+};
+
 const Navbar = ({ isDarkMode, toggleDarkMode }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
@@ -103,7 +115,20 @@ const Navbar = ({ isDarkMode, toggleDarkMode }) => {
               >
                 {isAuthenticated ? (
                   <div className="flex items-center">
-                    <div className="w-8 h-8 bg-gradient-to-br from-red-500 to-red-600 rounded-full flex items-center justify-center text-white text-sm font-semibold">
+                    {user?.avatar ? (
+                      <img
+                        src={getFullAvatarUrl(user.avatar)}
+                        alt={user?.full_name || 'User Avatar'}
+                        className="w-8 h-8 rounded-full object-cover border-2 border-white shadow-sm"
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                          e.target.nextSibling.style.display = 'flex';
+                        }}
+                      />
+                    ) : null}
+                    <div 
+                      className={`w-8 h-8 bg-gradient-to-br from-red-500 to-red-600 rounded-full flex items-center justify-center text-white text-sm font-semibold ${user?.avatar ? 'hidden' : ''}`}
+                    >
                       {user?.full_name?.charAt(0)?.toUpperCase() || 'U'}
                     </div>
                   </div>
@@ -121,7 +146,20 @@ const Navbar = ({ isDarkMode, toggleDarkMode }) => {
                       {/* User Info Header */}
                       <div className="px-4 py-3 bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
                         <div className="flex items-center space-x-3">
-                          <div className="w-12 h-12 bg-gradient-to-br from-red-500 to-red-600 rounded-full flex items-center justify-center text-white text-lg font-semibold shadow-lg">
+                          {user?.avatar ? (
+                            <img
+                              src={getFullAvatarUrl(user.avatar)}
+                              alt={user?.full_name || 'User Avatar'}
+                              className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-lg"
+                              onError={(e) => {
+                                e.target.style.display = 'none';
+                                e.target.nextSibling.style.display = 'flex';
+                              }}
+                            />
+                          ) : null}
+                          <div 
+                            className={`w-12 h-12 bg-gradient-to-br from-red-500 to-red-600 rounded-full flex items-center justify-center text-white text-lg font-semibold shadow-lg ${user?.avatar ? 'hidden' : ''}`}
+                          >
                             {user?.full_name?.charAt(0)?.toUpperCase() || 'U'}
                           </div>
                           <div className="flex-1 min-w-0">
@@ -258,7 +296,20 @@ const Navbar = ({ isDarkMode, toggleDarkMode }) => {
                 {/* User Info */}
                 <div className="px-3 py-3 bg-gray-50 dark:bg-gray-800 rounded-lg mx-3 mb-2 border border-gray-200 dark:border-gray-700">
                   <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-gradient-to-br from-red-500 to-red-600 rounded-full flex items-center justify-center text-white text-sm font-semibold shadow-lg">
+                    {user?.avatar ? (
+                      <img
+                        src={getFullAvatarUrl(user.avatar)}
+                        alt={user?.full_name || 'User Avatar'}
+                        className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-lg"
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                          e.target.nextSibling.style.display = 'flex';
+                        }}
+                      />
+                    ) : null}
+                    <div 
+                      className={`w-10 h-10 bg-gradient-to-br from-red-500 to-red-600 rounded-full flex items-center justify-center text-white text-sm font-semibold shadow-lg ${user?.avatar ? 'hidden' : ''}`}
+                    >
                       {user?.full_name?.charAt(0)?.toUpperCase() || 'U'}
                     </div>
                     <div className="flex-1 min-w-0">

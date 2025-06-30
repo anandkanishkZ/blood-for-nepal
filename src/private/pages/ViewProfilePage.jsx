@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useAuth } from "../../public/context/AuthContext";
 import { showToast } from "../../utils/toast";
+import SearchLocationInput from "../../public/components/common/SearchLocationInput";
 import { 
   User, 
   Mail, 
@@ -41,7 +42,8 @@ import {
   CalendarCheck,
   UserCircle,
   CreditCard,
-  Palette
+  Palette,
+  Scale
 } from "lucide-react";
 import apiClient from "../../utils/api.js";
 
@@ -70,6 +72,7 @@ const ViewProfilePage = () => {
   
   // Existing state
   const [editMode, setEditMode] = useState(false);
+  const [editingSection, setEditingSection] = useState(null); // Track which section is being edited
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
   const [formErrors, setFormErrors] = useState({});
   const [form, setForm] = useState({
@@ -84,6 +87,7 @@ const ViewProfilePage = () => {
     blood_type: "",
     emergency_contact: "",
     medical_conditions: "",
+    approximate_weight: "",
     is_donor: false,
   });
   
@@ -171,6 +175,8 @@ const ViewProfilePage = () => {
     setSidebarOpen(false);
     if (editMode) {
       setEditMode(false);
+      setEditingSection(null);
+      setFormErrors({});
     }
     // Smooth scroll to top on section change
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -200,6 +206,7 @@ const ViewProfilePage = () => {
         blood_type: user.blood_type || "",
         emergency_contact: user.emergency_contact || "",
         medical_conditions: user.medical_conditions || "",
+        approximate_weight: user.approximate_weight || "",
         is_donor: user.is_donor || false,
       });
       // Set avatar preview from user data if available
@@ -248,9 +255,116 @@ const ViewProfilePage = () => {
     }
   }, [passwordForm.newPassword]);
 
-  // Form validation
+  // Section-specific validation functions
+  const validatePersonalSection = () => {
+    const errors = {};
+    
+    console.log('Validating personal section with data:', {
+      full_name: form.full_name,
+      phone: form.phone,
+      gender: form.gender,
+      date_of_birth: form.date_of_birth,
+      province: form.province,
+      district: form.district,
+      municipality: form.municipality,
+      address: form.address
+    });
+    
+    if (!form.full_name.trim()) {
+      errors.full_name = "Full name is required";
+    } else if (form.full_name.trim().length < 2) {
+      errors.full_name = "Full name must be at least 2 characters";
+    }
+    
+    if (!form.date_of_birth) {
+      errors.date_of_birth = "Date of birth is required";
+    } else {
+      const birthDate = new Date(form.date_of_birth);
+      const today = new Date();
+      const age = today.getFullYear() - birthDate.getFullYear();
+      if (age < 16 || age > 100) {
+        errors.date_of_birth = "Please enter a valid date of birth (age 16-100)";
+      }
+    }
+    
+    if (!form.gender) {
+      errors.gender = "Gender is required";
+    }
+
+    // Location validation - at least province should be selected
+    if (!form.province) {
+      errors.province = "Province selection is required";
+    }
+    if (!form.district) {
+      errors.district = "District selection is required";
+    }
+    if (!form.municipality) {
+      errors.municipality = "Municipality selection is required";
+    }
+    
+    if (form.phone && !/^[+]?[\d\s\-()]+$/.test(form.phone)) {
+      errors.phone = "Please enter a valid phone number";
+    }
+    
+    setFormErrors(errors);
+    console.log('Personal section validation errors:', errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const validateMedicalSection = () => {
+    const errors = {};
+    
+    console.log('Validating medical section with data:', {
+      blood_type: form.blood_type,
+      emergency_contact: form.emergency_contact,
+      medical_conditions: form.medical_conditions,
+      approximate_weight: form.approximate_weight
+    });
+    
+    if (!form.blood_type) {
+      errors.blood_type = "Blood type is required";
+    }
+    
+    if (!form.emergency_contact.trim()) {
+      errors.emergency_contact = "Emergency contact is required";
+    } else if (!/^[+]?[\d\s\-()]+$/.test(form.emergency_contact)) {
+      errors.emergency_contact = "Please enter a valid emergency contact number";
+    }
+    
+    // Weight validation (optional field)
+    if (form.approximate_weight) {
+      const weight = parseFloat(form.approximate_weight);
+      if (isNaN(weight) || weight < 20 || weight > 300) {
+        errors.approximate_weight = "Weight must be between 20 and 300 kg";
+      }
+    }
+    
+    setFormErrors(errors);
+    console.log('Medical section validation errors:', errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const validateDonorSection = () => {
+    const errors = {};
+    
+    console.log('Validating donor section with data:', {
+      is_donor: form.is_donor
+    });
+    
+    // No required fields for donor section currently
+    // is_donor is a boolean checkbox, no validation needed
+    
+    setFormErrors(errors);
+    console.log('Donor section validation errors:', errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  // Legacy validation function for full form (if needed)
   const validateForm = () => {
     const errors = {};
+    
+    // Debug log to see current form state
+    console.log('Validating full form with data:', form);
     
     if (!form.full_name.trim()) {
       errors.full_name = "Full name is required";
@@ -276,6 +390,17 @@ const ViewProfilePage = () => {
     if (!form.gender) {
       errors.gender = "Gender is required";
     }
+
+    // Location validation - at least province should be selected
+    if (!form.province) {
+      errors.province = "Province selection is required";
+    }
+    if (!form.district) {
+      errors.district = "District selection is required";
+    }
+    if (!form.municipality) {
+      errors.municipality = "Municipality selection is required";
+    }
     
     if (!form.emergency_contact.trim()) {
       errors.emergency_contact = "Emergency contact is required";
@@ -283,11 +408,20 @@ const ViewProfilePage = () => {
       errors.emergency_contact = "Please enter a valid emergency contact number";
     }
     
+    // Weight validation (optional field)
+    if (form.approximate_weight) {
+      const weight = parseFloat(form.approximate_weight);
+      if (isNaN(weight) || weight < 20 || weight > 300) {
+        errors.approximate_weight = "Weight must be between 20 and 300 kg";
+      }
+    }
+    
     if (form.phone && !/^[+]?[\d\s\-()]+$/.test(form.phone)) {
       errors.phone = "Please enter a valid phone number";
     }
     
     setFormErrors(errors);
+    console.log('Full form validation errors:', errors);
     return Object.keys(errors).length === 0;
   };
 
@@ -360,46 +494,70 @@ const ViewProfilePage = () => {
     }
   };
 
-  const handleDateChange = (field, value) => {
-    // Get current date components or defaults
-    const currentDate = form.date_of_birth ? new Date(form.date_of_birth) : new Date();
-    let day = currentDate.getDate();
-    let month = currentDate.getMonth() + 1; // JavaScript months are 0-indexed
-    let year = currentDate.getFullYear();
-
-    // Update the specific field
-    if (field === 'day') day = parseInt(value) || 1;
-    if (field === 'month') month = parseInt(value) || 1;
-    if (field === 'year') year = parseInt(value) || new Date().getFullYear();
-
-    // Create new date string if all fields have values
-    if (day && month && year && value !== '') {
-      // Ensure valid day for the selected month/year
-      const daysInMonth = new Date(year, month, 0).getDate();
-      if (day > daysInMonth) {
-        day = daysInMonth;
-      }
-      
-      const newDate = new Date(year, month - 1, day);
-      const dateString = newDate.toISOString().split('T')[0];
-      
-      setForm({ ...form, date_of_birth: dateString });
-    } else if (value === '') {
-      // If clearing a field, clear the entire date
-      setForm({ ...form, date_of_birth: '' });
-    }
+  // Handle location selection from SearchLocationInput
+  const handleLocationSelected = (location) => {
+    setForm({
+      ...form,
+      province: location.province || '',
+      district: location.district || '',
+      municipality: location.municipality || ''
+    });
     
-    // Clear date of birth error when user starts selecting
-    if (formErrors.date_of_birth) {
-      setFormErrors({ ...formErrors, date_of_birth: "" });
+    // Clear location-related errors when user selects a location
+    if (formErrors.province || formErrors.district || formErrors.municipality) {
+      setFormErrors({
+        ...formErrors,
+        province: '',
+        district: '',
+        municipality: ''
+      });
     }
   };
 
+  // Section-specific edit and cancel handlers
+  const handleEditSection = (sectionName) => {
+    setEditMode(true);
+    setEditingSection(sectionName);
+    setFormErrors({});
+  };
+
+  const handleCancelEdit = () => {
+    setEditMode(false);
+    setEditingSection(null);
+    setFormErrors({});
+    if (user) {
+      setForm({
+        full_name: user.full_name || "",
+        phone: user.phone || "",
+        address: user.address || "",
+        province: user.province || "",
+        district: user.district || "",
+        municipality: user.municipality || "",
+        date_of_birth: user.date_of_birth ? user.date_of_birth.substring(0, 10) : "",
+        gender: user.gender || "",
+        blood_type: user.blood_type || "",
+        emergency_contact: user.emergency_contact || "",
+        medical_conditions: user.medical_conditions || "",
+        approximate_weight: user.approximate_weight || "",
+        is_donor: user.is_donor || false,
+      });
+      // Reset avatar
+      setAvatar(null);
+      if (user.avatar) {
+        setAvatarPreview(getFullAvatarUrl(user.avatar));
+      } else {
+        setAvatarPreview(`https://ui-avatars.com/api/?name=${encodeURIComponent(user.full_name || 'User')}&background=F87171&color=fff`);
+      }
+    }
+  };
+
+  // Legacy edit function (for backward compatibility)
   const handleEdit = () => {
     setEditMode(true);
     setFormErrors({});
   };
 
+  // Legacy cancel function (for backward compatibility) 
   const handleCancel = () => {
     setEditMode(false);
     setFormErrors({});
@@ -416,6 +574,7 @@ const ViewProfilePage = () => {
         blood_type: user.blood_type || "",
         emergency_contact: user.emergency_contact || "",
         medical_conditions: user.medical_conditions || "",
+        approximate_weight: user.approximate_weight || "",
         is_donor: user.is_donor || false,
       });
       // Reset avatar
@@ -524,6 +683,144 @@ const ViewProfilePage = () => {
     }
   };
 
+  // Section-specific submission functions
+  const handlePersonalSectionSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (!validatePersonalSection()) {
+      showToast.error("Please fix the errors below");
+      return;
+    }
+    
+    setIsUpdatingProfile(true);
+    try {
+      // Only send personal section fields
+      const personalData = {
+        full_name: form.full_name,
+        phone: form.phone,
+        address: form.address,
+        province: form.province,
+        district: form.district,
+        municipality: form.municipality,
+        date_of_birth: form.date_of_birth,
+        gender: form.gender
+      };
+      
+      const result = await updateProfile(personalData);
+      if (result && result.success) {
+        showToast.success("Personal information updated successfully!");
+        setEditMode(false);
+        setEditingSection(null);
+        setFormErrors({});
+      } else {
+        // Handle backend validation errors
+        if (result?.error?.validationErrors) {
+          const backendErrors = {};
+          result.error.validationErrors.forEach(err => {
+            backendErrors[err.path] = err.msg;
+          });
+          setFormErrors(backendErrors);
+          showToast.error("Please correct the validation errors");
+        } else {
+          showToast.error(result?.message || result?.error?.message || "Failed to update personal information");
+        }
+      }
+    } catch (error) {
+      console.error("Personal section update error:", error);
+      showToast.error("An unexpected error occurred");
+    } finally {
+      setIsUpdatingProfile(false);
+    }
+  };
+
+  const handleMedicalSectionSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (!validateMedicalSection()) {
+      showToast.error("Please fix the errors below");
+      return;
+    }
+    
+    setIsUpdatingProfile(true);
+    try {
+      // Only send medical section fields
+      const medicalData = {
+        blood_type: form.blood_type,
+        emergency_contact: form.emergency_contact,
+        medical_conditions: form.medical_conditions,
+        approximate_weight: form.approximate_weight
+      };
+      
+      const result = await updateProfile(medicalData);
+      if (result && result.success) {
+        showToast.success("Medical information updated successfully!");
+        setEditMode(false);
+        setEditingSection(null);
+        setFormErrors({});
+      } else {
+        // Handle backend validation errors
+        if (result?.error?.validationErrors) {
+          const backendErrors = {};
+          result.error.validationErrors.forEach(err => {
+            backendErrors[err.path] = err.msg;
+          });
+          setFormErrors(backendErrors);
+          showToast.error("Please correct the validation errors");
+        } else {
+          showToast.error(result?.message || result?.error?.message || "Failed to update medical information");
+        }
+      }
+    } catch (error) {
+      console.error("Medical section update error:", error);
+      showToast.error("An unexpected error occurred");
+    } finally {
+      setIsUpdatingProfile(false);
+    }
+  };
+
+  const handleDonorSectionSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (!validateDonorSection()) {
+      showToast.error("Please fix the errors below");
+      return;
+    }
+    
+    setIsUpdatingProfile(true);
+    try {
+      // Only send donor section fields
+      const donorData = {
+        is_donor: form.is_donor
+      };
+      
+      const result = await updateProfile(donorData);
+      if (result && result.success) {
+        showToast.success("Donor settings updated successfully!");
+        setEditMode(false);
+        setEditingSection(null);
+        setFormErrors({});
+      } else {
+        // Handle backend validation errors
+        if (result?.error?.validationErrors) {
+          const backendErrors = {};
+          result.error.validationErrors.forEach(err => {
+            backendErrors[err.path] = err.msg;
+          });
+          setFormErrors(backendErrors);
+          showToast.error("Please correct the validation errors");
+        } else {
+          showToast.error(result?.message || result?.error?.message || "Failed to update donor settings");
+        }
+      }
+    } catch (error) {
+      console.error("Donor section update error:", error);
+      showToast.error("An unexpected error occurred");
+    } finally {
+      setIsUpdatingProfile(false);
+    }
+  };
+
+  // Legacy submission function (for full form if needed)
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -985,7 +1282,18 @@ const ViewProfilePage = () => {
     };
 
     const completionPercentage = () => {
-      const fields = [user.full_name, user.phone, user.address, user.date_of_birth, user.gender, user.blood_type, user.emergency_contact];
+      const fields = [
+        user.full_name, 
+        user.phone, 
+        user.address, 
+        user.date_of_birth, 
+        user.gender, 
+        user.blood_type, 
+        user.emergency_contact,
+        user.province,
+        user.district,
+        user.municipality
+      ];
       const filledFields = fields.filter(field => field && field.toString().trim() !== '').length;
       return Math.round((filledFields / fields.length) * 100);
     };
@@ -1173,9 +1481,9 @@ const ViewProfilePage = () => {
                 <p className="text-gray-500 dark:text-gray-400">Manage your basic details and contact information</p>
               </div>
             </div>
-            {!editMode && (
+            {!(editMode && editingSection === 'personal') && (
               <button
-                onClick={handleEdit}
+                onClick={() => handleEditSection('personal')}
                 className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl transition-colors font-medium flex items-center space-x-2"
               >
                 <Edit3 className="h-4 w-4" />
@@ -1187,8 +1495,8 @@ const ViewProfilePage = () => {
 
         {/* Form Content */}
         <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl rounded-2xl p-8 border border-white/20 dark:border-gray-700/50">
-          {editMode ? (
-            <form onSubmit={handleSubmit} className="space-y-6">
+          {editMode && editingSection === 'personal' ? (
+            <form onSubmit={handlePersonalSectionSubmit} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Full Name */}
                 <div>
@@ -1294,66 +1602,282 @@ const ViewProfilePage = () => {
                   <Calendar className="h-4 w-4 inline mr-2" />
                   Date of Birth *
                 </label>
-                <div className="grid grid-cols-3 gap-3">
-                  <div>
-                    <input
-                      type="number"
-                      placeholder="Day"
-                      min="1"
-                      max="31"
-                      value={form.date_of_birth ? new Date(form.date_of_birth).getDate() : ''}
-                      onChange={(e) => handleDateChange('day', e.target.value)}
-                      className={`w-full px-4 py-3 rounded-xl border-2 transition-all duration-200 bg-white dark:bg-gray-700 ${
-                        formErrors.date_of_birth
-                          ? 'border-red-300 focus:border-red-500'
-                          : 'border-gray-200 dark:border-gray-600 focus:border-emerald-500'
-                      }`}
-                    />
+                
+                {/* Custom Date Selector */}
+                <div className="space-y-4">
+                  <div className="grid grid-cols-3 gap-3">
+                    {/* Day Selector */}
+                    <div className="relative">
+                      <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">
+                        Day
+                      </label>
+                      <div className="relative">
+                        <select
+                          value={form.date_of_birth ? new Date(form.date_of_birth).getDate().toString().padStart(2, '0') : ''}
+                          onChange={(e) => {
+                            const day = e.target.value;
+                            if (day && form.date_of_birth) {
+                              const currentDate = new Date(form.date_of_birth);
+                              currentDate.setDate(parseInt(day));
+                              setForm({
+                                ...form,
+                                date_of_birth: currentDate.toISOString().split('T')[0]
+                              });
+                            } else if (day) {
+                              // If only day is selected, create a placeholder date
+                              const today = new Date();
+                              const year = today.getFullYear() - 25; // Default to 25 years ago
+                              const month = 1; // Default to January
+                              const newDate = new Date(year, month - 1, parseInt(day));
+                              setForm({
+                                ...form,
+                                date_of_birth: newDate.toISOString().split('T')[0]
+                              });
+                            }
+                          }}
+                          className={`w-full px-3 py-3 rounded-xl border-2 transition-all duration-200 bg-white dark:bg-gray-700 appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-500/20 ${
+                            formErrors.date_of_birth
+                              ? 'border-red-300 focus:border-red-500 focus:ring-red-500/20'
+                              : 'border-gray-200 dark:border-gray-600 focus:border-emerald-500 hover:border-emerald-300 dark:hover:border-emerald-600'
+                          }`}
+                        >
+                          <option value="">Day</option>
+                          {Array.from({ length: 31 }, (_, i) => i + 1).map(day => (
+                            <option key={day} value={day.toString().padStart(2, '0')}>
+                              {day.toString().padStart(2, '0')}
+                            </option>
+                          ))}
+                        </select>
+                        <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                          <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                          </svg>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Month Selector */}
+                    <div className="relative">
+                      <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">
+                        Month
+                      </label>
+                      <div className="relative">
+                        <select
+                          value={form.date_of_birth ? (new Date(form.date_of_birth).getMonth() + 1).toString().padStart(2, '0') : ''}
+                          onChange={(e) => {
+                            const month = e.target.value;
+                            if (month && form.date_of_birth) {
+                              const currentDate = new Date(form.date_of_birth);
+                              currentDate.setMonth(parseInt(month) - 1);
+                              setForm({
+                                ...form,
+                                date_of_birth: currentDate.toISOString().split('T')[0]
+                              });
+                            } else if (month) {
+                              // If only month is selected, create a placeholder date
+                              const today = new Date();
+                              const year = today.getFullYear() - 25; // Default to 25 years ago
+                              const day = 1; // Default to 1st day
+                              const newDate = new Date(year, parseInt(month) - 1, day);
+                              setForm({
+                                ...form,
+                                date_of_birth: newDate.toISOString().split('T')[0]
+                              });
+                            }
+                          }}
+                          className={`w-full px-3 py-3 rounded-xl border-2 transition-all duration-200 bg-white dark:bg-gray-700 appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-500/20 ${
+                            formErrors.date_of_birth
+                              ? 'border-red-300 focus:border-red-500 focus:ring-red-500/20'
+                              : 'border-gray-200 dark:border-gray-600 focus:border-emerald-500 hover:border-emerald-300 dark:hover:border-emerald-600'
+                          }`}
+                        >
+                          <option value="">Month</option>
+                          {[
+                            { value: '01', name: 'January' },
+                            { value: '02', name: 'February' },
+                            { value: '03', name: 'March' },
+                            { value: '04', name: 'April' },
+                            { value: '05', name: 'May' },
+                            { value: '06', name: 'June' },
+                            { value: '07', name: 'July' },
+                            { value: '08', name: 'August' },
+                            { value: '09', name: 'September' },
+                            { value: '10', name: 'October' },
+                            { value: '11', name: 'November' },
+                            { value: '12', name: 'December' }
+                          ].map(month => (
+                            <option key={month.value} value={month.value}>
+                              {month.name}
+                            </option>
+                          ))}
+                        </select>
+                        <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                          <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                          </svg>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Year Selector */}
+                    <div className="relative">
+                      <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">
+                        Year
+                      </label>
+                      <div className="relative">
+                        <select
+                          value={form.date_of_birth ? new Date(form.date_of_birth).getFullYear().toString() : ''}
+                          onChange={(e) => {
+                            const year = e.target.value;
+                            if (year && form.date_of_birth) {
+                              const currentDate = new Date(form.date_of_birth);
+                              currentDate.setFullYear(parseInt(year));
+                              setForm({
+                                ...form,
+                                date_of_birth: currentDate.toISOString().split('T')[0]
+                              });
+                            } else if (year) {
+                              // If only year is selected, create a placeholder date
+                              const month = 1; // Default to January
+                              const day = 1; // Default to 1st day
+                              const newDate = new Date(parseInt(year), month - 1, day);
+                              setForm({
+                                ...form,
+                                date_of_birth: newDate.toISOString().split('T')[0]
+                              });
+                            }
+                          }}
+                          className={`w-full px-3 py-3 rounded-xl border-2 transition-all duration-200 bg-white dark:bg-gray-700 appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-500/20 ${
+                            formErrors.date_of_birth
+                              ? 'border-red-300 focus:border-red-500 focus:ring-red-500/20'
+                              : 'border-gray-200 dark:border-gray-600 focus:border-emerald-500 hover:border-emerald-300 dark:hover:border-emerald-600'
+                          }`}
+                        >
+                          <option value="">Year</option>
+                          {Array.from({ length: 84 }, (_, i) => new Date().getFullYear() - 16 - i).map(year => (
+                            <option key={year} value={year}>
+                              {year}
+                            </option>
+                          ))}
+                        </select>
+                        <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                          <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                          </svg>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <input
-                      type="number"
-                      placeholder="Month"
-                      min="1"
-                      max="12"
-                      value={form.date_of_birth ? new Date(form.date_of_birth).getMonth() + 1 : ''}
-                      onChange={(e) => handleDateChange('month', e.target.value)}
-                      className={`w-full px-4 py-3 rounded-xl border-2 transition-all duration-200 bg-white dark:bg-gray-700 ${
-                        formErrors.date_of_birth
-                          ? 'border-red-300 focus:border-red-500'
-                          : 'border-gray-200 dark:border-gray-600 focus:border-emerald-500'
-                      }`}
-                    />
-                  </div>
-                  <div>
-                    <input
-                      type="number"
-                      placeholder="Year"
-                      min="1920"
-                      max="2010"
-                      value={form.date_of_birth ? new Date(form.date_of_birth).getFullYear() : ''}
-                      onChange={(e) => handleDateChange('year', e.target.value)}
-                      className={`w-full px-4 py-3 rounded-xl border-2 transition-all duration-200 bg-white dark:bg-gray-700 ${
-                        formErrors.date_of_birth
-                          ? 'border-red-300 focus:border-red-500'
-                          : 'border-gray-200 dark:border-gray-600 focus:border-emerald-500'
-                      }`}
-                    />
-                  </div>
+
+                  {/* Selected Date Preview */}
+                  {form.date_of_birth && (
+                    <div className="p-4 bg-gradient-to-r from-emerald-50 to-blue-50 dark:from-emerald-900/20 dark:to-blue-900/20 border border-emerald-200 dark:border-emerald-700 rounded-xl">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                          <div className="p-2 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg">
+                            <Calendar className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-emerald-800 dark:text-emerald-300">
+                              Selected Date
+                            </p>
+                            <p className="text-lg font-semibold text-emerald-900 dark:text-emerald-200">
+                              {new Date(form.date_of_birth).toLocaleDateString('en-US', {
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric'
+                              })}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm text-emerald-600 dark:text-emerald-400">Age</p>
+                          <p className="text-xl font-bold text-emerald-700 dark:text-emerald-300">
+                            {(() => {
+                              const today = new Date();
+                              const birth = new Date(form.date_of_birth);
+                              
+                              let years = today.getFullYear() - birth.getFullYear();
+                              let months = today.getMonth() - birth.getMonth();
+                              let days = today.getDate() - birth.getDate();
+                              
+                              // Adjust for negative days
+                              if (days < 0) {
+                                months--;
+                                const lastMonth = new Date(today.getFullYear(), today.getMonth(), 0);
+                                days += lastMonth.getDate();
+                              }
+                              
+                              // Adjust for negative months
+                              if (months < 0) {
+                                years--;
+                                months += 12;
+                              }
+                              
+                              const parts = [];
+                              if (years > 0) parts.push(`${years}y`);
+                              if (months > 0) parts.push(`${months}m`);
+                              if (days > 0) parts.push(`${days}d`);
+                              
+                              return parts.length > 0 ? parts.join(' ') : '0d';
+                            })()}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
+
                 {formErrors.date_of_birth && (
+                  <div className="mt-3 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                    <p className="text-sm text-red-600 dark:text-red-400 flex items-center">
+                      <AlertTriangle className="h-4 w-4 mr-2 flex-shrink-0" />
+                      {formErrors.date_of_birth}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Location Selection */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+                  <MapPin className="h-4 w-4 inline mr-2" />
+                  Location Information
+                </label>
+                <div className="space-y-4">
+                  <SearchLocationInput onLocationSelected={handleLocationSelected} />
+                  
+                  {form.province && form.district && form.municipality && (
+                    <div className="p-4 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-700 rounded-xl">
+                      <div className="flex items-center">
+                        <div className="p-2 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg mr-3">
+                          <MapPin className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-emerald-800 dark:text-emerald-300">
+                            Selected Location
+                          </p>
+                          <p className="text-sm text-emerald-600 dark:text-emerald-400">
+                            {form.municipality}, {form.district}, {form.province}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                {(formErrors.province || formErrors.district || formErrors.municipality) && (
                   <p className="mt-2 text-sm text-red-600 dark:text-red-400 flex items-center">
                     <AlertTriangle className="h-4 w-4 mr-1" />
-                    {formErrors.date_of_birth}
+                    Please select your complete location (Province, District, and Municipality)
                   </p>
                 )}
               </div>
 
-              {/* Address */}
+              {/* Street Address */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
                   <MapPin className="h-4 w-4 inline mr-2" />
-                  Address
+                  Street Address
                 </label>
                 <input
                   type="text"
@@ -1365,7 +1889,7 @@ const ViewProfilePage = () => {
                       ? 'border-red-300 focus:border-red-500'
                       : 'border-gray-200 dark:border-gray-600 focus:border-emerald-500'
                   }`}
-                  placeholder="Enter your full address"
+                  placeholder="Enter your street address, building name, ward number, etc."
                 />
                 {formErrors.address && (
                   <p className="mt-2 text-sm text-red-600 dark:text-red-400 flex items-center">
@@ -1379,7 +1903,7 @@ const ViewProfilePage = () => {
               <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200 dark:border-gray-700">
                 <button
                   type="button"
-                  onClick={handleCancel}
+                  onClick={handleCancelEdit}
                   className="px-6 py-3 border-2 border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium"
                 >
                   Cancel
@@ -1450,21 +1974,53 @@ const ViewProfilePage = () => {
                       <Calendar className="h-4 w-4 text-gray-500" />
                       <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Date of Birth</span>
                     </div>
-                    <p className="text-lg font-semibold text-gray-900 dark:text-white">
-                      {user.date_of_birth ? new Date(user.date_of_birth).toLocaleDateString('en-US', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric'
-                      }) : 'Not provided'}
-                    </p>
+                    {user.date_of_birth ? (
+                      <div className="space-y-1">
+                        <p className="text-lg font-semibold text-gray-900 dark:text-white">
+                          {new Date(user.date_of_birth).toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric'
+                          })}
+                        </p>
+                        <p className="text-sm text-emerald-600 dark:text-emerald-400 font-medium">
+                          Age: {(() => {
+                            const today = new Date();
+                            const birth = new Date(user.date_of_birth);
+                            let age = today.getFullYear() - birth.getFullYear();
+                            const monthDiff = today.getMonth() - birth.getMonth();
+                            if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+                              age--;
+                            }
+                            return age;
+                          })()} years old
+                        </p>
+                      </div>
+                    ) : (
+                      <p className="text-lg font-semibold text-gray-500 dark:text-gray-400">Not provided</p>
+                    )}
                   </div>
 
+                  {/* Location Information */}
                   <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
                     <div className="flex items-center space-x-2 mb-2">
                       <MapPin className="h-4 w-4 text-gray-500" />
-                      <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Address</span>
+                      <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Location</span>
                     </div>
-                    <p className="text-lg font-semibold text-gray-900 dark:text-white">{user.address || 'Not provided'}</p>
+                    <div className="space-y-1">
+                      {user.province || user.district || user.municipality ? (
+                        <p className="text-lg font-semibold text-gray-900 dark:text-white">
+                          {[user.municipality, user.district, user.province].filter(Boolean).join(', ')}
+                        </p>
+                      ) : (
+                        <p className="text-lg font-semibold text-gray-500 dark:text-gray-400">Not provided</p>
+                      )}
+                      {user.address && (
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                          Street: {user.address}
+                        </p>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1491,9 +2047,9 @@ const ViewProfilePage = () => {
                 <p className="text-gray-500 dark:text-gray-400">Health details and emergency contacts</p>
               </div>
             </div>
-            {!editMode && (
+            {!(editMode && editingSection === 'medical') && (
               <button
-                onClick={handleEdit}
+                onClick={() => handleEditSection('medical')}
                 className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl transition-colors font-medium flex items-center space-x-2"
               >
                 <Edit3 className="h-4 w-4" />
@@ -1505,8 +2061,8 @@ const ViewProfilePage = () => {
 
         {/* Form Content */}
         <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl rounded-2xl p-8 border border-white/20 dark:border-gray-700/50">
-          {editMode ? (
-            <form onSubmit={handleSubmit} className="space-y-6">
+          {editMode && editingSection === 'medical' ? (
+            <form onSubmit={handleMedicalSectionSubmit} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Blood Type */}
                 <div>
@@ -1538,6 +2094,38 @@ const ViewProfilePage = () => {
                     <p className="mt-2 text-sm text-red-600 dark:text-red-400 flex items-center">
                       <AlertTriangle className="h-4 w-4 mr-1" />
                       {formErrors.blood_type}
+                    </p>
+                  )}
+                </div>
+
+                {/* Approximate Weight */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+                    <Scale className="h-4 w-4 inline mr-2" />
+                    Approximate Weight (kg)
+                  </label>
+                  <input
+                    type="number"
+                    name="approximate_weight"
+                    value={form.approximate_weight}
+                    onChange={handleChange}
+                    min="20"
+                    max="300"
+                    step="0.1"
+                    className={`w-full px-4 py-3 rounded-xl border-2 transition-all duration-200 bg-white dark:bg-gray-700 ${
+                      formErrors.approximate_weight
+                        ? 'border-red-300 focus:border-red-500'
+                        : 'border-gray-200 dark:border-gray-600 focus:border-purple-500'
+                    }`}
+                    placeholder="Enter your approximate weight"
+                  />
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    Weight should be between 20-300 kg. This helps ensure safe blood donation.
+                  </p>
+                  {formErrors.approximate_weight && (
+                    <p className="mt-2 text-sm text-red-600 dark:text-red-400 flex items-center">
+                      <AlertTriangle className="h-4 w-4 mr-1" />
+                      {formErrors.approximate_weight}
                     </p>
                   )}
                 </div>
@@ -1602,7 +2190,7 @@ const ViewProfilePage = () => {
               <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200 dark:border-gray-700">
                 <button
                   type="button"
-                  onClick={handleCancel}
+                  onClick={handleCancelEdit}
                   className="px-6 py-3 border-2 border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium"
                 >
                   Cancel
@@ -1656,6 +2244,23 @@ const ViewProfilePage = () => {
                     <span className="text-sm font-medium text-blue-700 dark:text-blue-300">Emergency Contact</span>
                   </div>
                   <p className="text-xl font-semibold text-blue-800 dark:text-blue-200">{user.emergency_contact || 'Not provided'}</p>
+                </div>
+
+                <div className="p-6 bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-200 dark:border-green-800">
+                  <div className="flex items-center space-x-3 mb-3">
+                    <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
+                      <Scale className="h-5 w-5 text-green-600 dark:text-green-400" />
+                    </div>
+                    <span className="text-sm font-medium text-green-700 dark:text-green-300">Approximate Weight</span>
+                  </div>
+                  <p className="text-xl font-semibold text-green-800 dark:text-green-200">
+                    {user.approximate_weight ? `${user.approximate_weight} kg` : 'Not provided'}
+                  </p>
+                  {user.approximate_weight && (
+                    <p className="text-sm text-green-600 dark:text-green-400 mt-1">
+                      Suitable for blood donation
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -1713,7 +2318,7 @@ const ViewProfilePage = () => {
 
         {/* Donor Status Card */}
         <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl rounded-2xl p-8 border border-white/20 dark:border-gray-700/50">
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleDonorSectionSubmit} className="space-y-6">
             {/* Donor Status Toggle */}
             <div className={`p-6 rounded-2xl border-2 transition-all duration-300 ${
               form.is_donor 

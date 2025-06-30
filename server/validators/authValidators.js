@@ -71,6 +71,24 @@ export const validateProfileUpdate = [
     .isLength({ max: 500 })
     .withMessage('Address must be less than 500 characters'),
 
+  body('province')
+    .optional()
+    .trim()
+    .isLength({ min: 2, max: 100 })
+    .withMessage('Province name must be between 2 and 100 characters'),
+
+  body('district')
+    .optional()
+    .trim()
+    .isLength({ min: 2, max: 100 })
+    .withMessage('District name must be between 2 and 100 characters'),
+
+  body('municipality')
+    .optional()
+    .trim()
+    .isLength({ min: 2, max: 100 })
+    .withMessage('Municipality name must be between 2 and 100 characters'),
+
   body('date_of_birth')
     .optional()
     .isISO8601()
@@ -103,6 +121,11 @@ export const validateProfileUpdate = [
     .trim()
     .isLength({ max: 1000 })
     .withMessage('Medical conditions must be less than 1000 characters'),
+
+  body('approximate_weight')
+    .optional()
+    .isFloat({ min: 20, max: 300 })
+    .withMessage('Weight must be between 20 and 300 kg'),
 
   body('blood_type')
     .optional()

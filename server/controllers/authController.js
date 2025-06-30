@@ -183,10 +183,14 @@ export const updateProfile = async (req, res, next) => {
       'full_name',
       'phone',
       'address',
+      'province',
+      'district',
+      'municipality',
       'date_of_birth',
       'gender',
       'emergency_contact',
       'medical_conditions',
+      'approximate_weight',
       'blood_type',
       'is_donor'
     ];

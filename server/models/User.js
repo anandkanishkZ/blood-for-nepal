@@ -92,6 +92,36 @@ class User extends Model {
         type: DataTypes.TEXT,
         allowNull: true
       },
+      province: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        validate: {
+          len: {
+            args: [2, 100],
+            msg: 'Province name must be between 2 and 100 characters'
+          }
+        }
+      },
+      district: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        validate: {
+          len: {
+            args: [2, 100],
+            msg: 'District name must be between 2 and 100 characters'
+          }
+        }
+      },
+      municipality: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        validate: {
+          len: {
+            args: [2, 100],
+            msg: 'Municipality name must be between 2 and 100 characters'
+          }
+        }
+      },
       date_of_birth: {
         type: DataTypes.DATEONLY,
         allowNull: true,
@@ -138,6 +168,20 @@ class User extends Model {
       medical_conditions: {
         type: DataTypes.TEXT,
         allowNull: true
+      },
+      approximate_weight: {
+        type: DataTypes.DECIMAL(5, 2),
+        allowNull: true,
+        validate: {
+          min: {
+            args: [20],
+            msg: 'Weight should be at least 20 kg'
+          },
+          max: {
+            args: [300],
+            msg: 'Weight should not exceed 300 kg'
+          }
+        }
       },
       is_email_verified: {
         type: DataTypes.BOOLEAN,
@@ -192,6 +236,19 @@ class User extends Model {
         },
         {
           fields: ['is_active']
+        },
+        {
+          fields: ['province']
+        },
+        {
+          fields: ['district']
+        },
+        {
+          fields: ['municipality']
+        },
+        {
+          fields: ['province', 'district', 'municipality'],
+          name: 'idx_users_location_composite'
         }
       ]
     });
