@@ -30,7 +30,6 @@ const Navbar = ({ isDarkMode, toggleDarkMode }) => {
       showToast.logout.success();
       navigate('/');
     } catch (error) {
-      console.error('Logout error:', error);
       showToast.error('Failed to logout. Please try again.');
     }
   };

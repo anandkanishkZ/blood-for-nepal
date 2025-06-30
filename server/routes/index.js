@@ -1,5 +1,6 @@
 import express from 'express';
 import authRoutes from './auth.js';
+import uploadRoutes from './uploadRoutes.js';
 
 const router = express.Router();
 
@@ -15,5 +16,6 @@ router.get('/health', (req, res) => {
 
 // Mount routes
 router.use('/auth', authRoutes);
+router.use('/', uploadRoutes);
 
 export default router;

@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { User, Phone, Mail, Calendar, Droplets, MapPin, CheckCircle, Check } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
+import { authAPI } from '../../utils/api';
+import { showToast } from '../../utils/toast';
 import SearchLocationInput from '../components/common/SearchLocationInput';
 
 // Helper component for pre-filled field indicator
@@ -168,18 +170,53 @@ const DonorRegistrationPage = () => {
     window.scrollTo(0, 0);
   };
   
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Validate required fields
+    if (!formData.patientName || !formData.phoneNumber || !formData.dateOfBirth || 
+        !formData.gender || !formData.bloodType || !formData.rhFactor || 
+        !formData.location.province || !formData.street || !formData.agreedToTerms) {
+      showToast.error('Please fill in all required fields and agree to terms.');
+      return;
+    }
+    
     setIsSubmitting(true);
     
-    setTimeout(() => {
-      setIsSubmitting(false);
-      setIsSuccess(true);
+    try {
+      // Clean up the data before sending - remove empty optional fields
+      const cleanedData = { ...formData };
       
-      setTimeout(() => {
-        navigate('/');
-      }, 3000);
-    }, 1500);
+      // Remove empty optional fields to avoid validation errors
+      if (!cleanedData.lastDonation || cleanedData.lastDonation.trim() === '') {
+        delete cleanedData.lastDonation;
+      }
+      if (!cleanedData.medicalConditions || cleanedData.medicalConditions.trim() === '') {
+        delete cleanedData.medicalConditions;
+      }
+      if (!cleanedData.email || cleanedData.email.trim() === '') {
+        delete cleanedData.email;
+      }
+      
+      const response = await authAPI.registerDonor(cleanedData);
+      
+      if (response.success) {
+        showToast.success('Donor registration completed successfully!');
+        setIsSuccess(true);
+        
+        // Redirect after showing success for a while
+        setTimeout(() => {
+          navigate('/');
+        }, 3000);
+      } else {
+        throw new Error(response.message || 'Registration failed');
+      }
+    } catch (error) {
+      const errorMessage = error.message || 'Failed to complete donor registration. Please try again.';
+      showToast.error(errorMessage);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
   
   // Show loading spinner while checking authentication

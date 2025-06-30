@@ -6,6 +6,18 @@ import AdminSidebar from '../AdminSidebar';
 import { Search, Shield, Ban, X as XIcon, Info, Unlock, LogIn, Eye, UserCheck, UserX } from 'lucide-react';
 import { showToast } from '../../utils/toast';
 
+// Utility function to construct full avatar URL
+const getFullAvatarUrl = (avatarPath, bustCache = false) => {
+  if (!avatarPath) return null;
+  if (avatarPath.startsWith('http')) return avatarPath;
+  const baseUrl = import.meta.env.VITE_API_URL?.replace('/api/v1', '') || 'http://localhost:5000';
+  if (bustCache) {
+    const timestamp = new Date().getTime();
+    return `${baseUrl}${avatarPath}?t=${timestamp}`;
+  }
+  return `${baseUrl}${avatarPath}`;
+};
+
 const USERS_PER_PAGE = 10;
 
 const AdminUsersPage = ({ isDarkMode, toggleDarkMode }) => {
@@ -14,6 +26,7 @@ const AdminUsersPage = ({ isDarkMode, toggleDarkMode }) => {
   const [error, setError] = useState(null);
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('');
+  const [donorFilter, setDonorFilter] = useState('');
   const [page, setPage] = useState(1);
   const [blockModal, setBlockModal] = useState({ open: false, user: null });
   const [blockNote, setBlockNote] = useState('');
@@ -27,11 +40,9 @@ const AdminUsersPage = ({ isDarkMode, toggleDarkMode }) => {
       setError(null);
       try {
         const res = await authAPI.getAllUsers();
-        console.log('Fetched users response:', res);
         const users = res?.data?.data?.users || res?.data?.users || res?.users || [];
         setUsers(users);
       } catch (err) {
-        console.error('Failed to load users:', err, err?.data || err?.message || err);
         setError(err?.data?.message || err?.message || 'Failed to load users.');
       } finally {
         setLoading(false);
@@ -46,15 +57,24 @@ const AdminUsersPage = ({ isDarkMode, toggleDarkMode }) => {
     if (roleFilter) {
       filtered = filtered.filter(u => u.role === roleFilter);
     }
+    if (donorFilter) {
+      if (donorFilter === 'donor') {
+        filtered = filtered.filter(u => u.is_donor === true);
+      } else if (donorFilter === 'non-donor') {
+        filtered = filtered.filter(u => u.is_donor !== true);
+      }
+    }
     if (search.trim()) {
       const s = search.trim().toLowerCase();
       filtered = filtered.filter(u =>
         u.full_name?.toLowerCase().includes(s) ||
-        u.email?.toLowerCase().includes(s)
+        u.email?.toLowerCase().includes(s) ||
+        u.phone?.toLowerCase().includes(s) ||
+        u.blood_type?.toLowerCase().includes(s)
       );
     }
     return filtered;
-  }, [users, search, roleFilter]);
+  }, [users, search, roleFilter, donorFilter]);
 
   // Pagination
   const totalPages = Math.ceil(filteredUsers.length / USERS_PER_PAGE) || 1;
@@ -63,7 +83,7 @@ const AdminUsersPage = ({ isDarkMode, toggleDarkMode }) => {
   // Reset to page 1 if filters/search change
   useEffect(() => {
     setPage(1);
-  }, [search, roleFilter]);
+  }, [search, roleFilter, donorFilter]);
 
   // Block user handler (backend)
   const handleBlockUser = async () => {
@@ -140,7 +160,7 @@ const AdminUsersPage = ({ isDarkMode, toggleDarkMode }) => {
               type="text"
               value={search}
               onChange={e => setSearch(e.target.value)}
-              placeholder="Search by name or email..."
+              placeholder="Search by name, email, phone, or blood type..."
               className="w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500 focus:border-red-500"
             />
           </div>
@@ -153,6 +173,15 @@ const AdminUsersPage = ({ isDarkMode, toggleDarkMode }) => {
             <option value="admin">Admin</option>
             <option value="user">User</option>
             <option value="moderator">Moderator</option>
+          </select>
+          <select
+            value={donorFilter}
+            onChange={e => setDonorFilter(e.target.value)}
+            className="w-full md:w-48 px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500 focus:border-red-500"
+          >
+            <option value="">All Users</option>
+            <option value="donor">Donors Only</option>
+            <option value="non-donor">Non-Donors</option>
           </select>
         </div>
         {loading ? (
@@ -173,6 +202,7 @@ const AdminUsersPage = ({ isDarkMode, toggleDarkMode }) => {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Email</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Blood Type</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Phone</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Address</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Role</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Registered</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
@@ -181,11 +211,13 @@ const AdminUsersPage = ({ isDarkMode, toggleDarkMode }) => {
                 <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                   {paginatedUsers.length === 0 ? (
                     <tr>
-                      <td colSpan={9} className="text-center py-8 text-gray-500 dark:text-gray-400">No users found.</td>
+                      <td colSpan={10} className="text-center py-8 text-gray-500 dark:text-gray-400">No users found.</td>
                     </tr>
                   ) : (
                     paginatedUsers.map((user, idx) => {
-                      const avatarUrl = user.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.full_name || 'User')}&background=F87171&color=fff`;
+                      const avatarUrl = user.avatar 
+                        ? getFullAvatarUrl(user.avatar) 
+                        : `https://ui-avatars.com/api/?name=${encodeURIComponent(user.full_name || 'User')}&background=F87171&color=fff`;
                       const isBlocked = user.is_active === false;
                       return (
                         <tr key={user.id} className={`hover:bg-gray-50 dark:hover:bg-gray-700 transition ${isBlocked ? 'opacity-60 bg-gray-100 dark:bg-gray-900' : ''}`}>
@@ -228,6 +260,9 @@ const AdminUsersPage = ({ isDarkMode, toggleDarkMode }) => {
                             </span>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-gray-700 dark:text-gray-300">{user.phone || '-'}</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-gray-700 dark:text-gray-300 text-sm max-w-xs truncate" title={user.address}>
+                            {user.address || '-'}
+                          </td>
                           <td className="px-6 py-4 whitespace-nowrap text-gray-700 dark:text-gray-300 capitalize">{user.role}</td>
                           <td className="px-6 py-4 whitespace-nowrap text-gray-500 dark:text-gray-400">{user.createdAt ? new Date(user.createdAt).toLocaleDateString() : '-'}</td>
                           <td className="px-6 py-4 whitespace-nowrap">
@@ -307,7 +342,9 @@ const AdminUsersPage = ({ isDarkMode, toggleDarkMode }) => {
                   <div className="p-6 space-y-4">
                     <div className="text-center mb-6">
                       <img
-                        src={actionsModal.user.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(actionsModal.user.full_name || 'User')}&background=F87171&color=fff`}
+                        src={actionsModal.user.avatar 
+                          ? getFullAvatarUrl(actionsModal.user.avatar) 
+                          : `https://ui-avatars.com/api/?name=${encodeURIComponent(actionsModal.user.full_name || 'User')}&background=F87171&color=fff`}
                         alt={actionsModal.user.full_name}
                         className="w-16 h-16 rounded-full mx-auto border-4 border-gray-200 dark:border-gray-700 shadow-lg"
                       />
@@ -375,21 +412,79 @@ const AdminUsersPage = ({ isDarkMode, toggleDarkMode }) => {
 
                     {/* User Status Info */}
                     <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-600 dark:text-gray-400">Current Status:</span>
-                        <span className={`font-medium px-2 py-1 rounded-full text-xs ${
-                          actionsModal.user.is_active !== false 
-                            ? 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300' 
-                            : 'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300'
-                        }`}>
-                          {actionsModal.user.is_active !== false ? 'Active' : 'Blocked'}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between text-sm mt-2">
-                        <span className="text-gray-600 dark:text-gray-400">Blood Type:</span>
-                        <span className="font-medium text-gray-900 dark:text-white">
-                          {actionsModal.user.blood_type || 'Not specified'}
-                        </span>
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div className="flex flex-col">
+                          <span className="text-gray-600 dark:text-gray-400">Current Status:</span>
+                          <span className={`font-medium px-2 py-1 rounded-full text-xs w-fit mt-1 ${
+                            actionsModal.user.is_active !== false 
+                              ? 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300' 
+                              : 'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300'
+                          }`}>
+                            {actionsModal.user.is_active !== false ? 'Active' : 'Blocked'}
+                          </span>
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-gray-600 dark:text-gray-400">Blood Type:</span>
+                          <span className="font-medium text-gray-900 dark:text-white mt-1">
+                            {actionsModal.user.blood_type || 'Not specified'}
+                          </span>
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-gray-600 dark:text-gray-400">Phone:</span>
+                          <span className="font-medium text-gray-900 dark:text-white mt-1">
+                            {actionsModal.user.phone || 'Not provided'}
+                          </span>
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-gray-600 dark:text-gray-400">Donor Status:</span>
+                          <span className={`font-medium px-2 py-1 rounded-full text-xs w-fit mt-1 ${
+                            actionsModal.user.is_donor
+                              ? 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300'
+                              : 'bg-gray-100 dark:bg-gray-900/40 text-gray-700 dark:text-gray-300'
+                          }`}>
+                            {actionsModal.user.is_donor ? 'Active Donor' : 'Not a Donor'}
+                          </span>
+                        </div>
+                        {actionsModal.user.address && (
+                          <div className="flex flex-col col-span-2">
+                            <span className="text-gray-600 dark:text-gray-400">Address:</span>
+                            <span className="font-medium text-gray-900 dark:text-white mt-1 text-sm">
+                              {actionsModal.user.address}
+                            </span>
+                          </div>
+                        )}
+                        {actionsModal.user.date_of_birth && (
+                          <div className="flex flex-col">
+                            <span className="text-gray-600 dark:text-gray-400">Date of Birth:</span>
+                            <span className="font-medium text-gray-900 dark:text-white mt-1">
+                              {new Date(actionsModal.user.date_of_birth).toLocaleDateString()}
+                            </span>
+                          </div>
+                        )}
+                        {actionsModal.user.gender && (
+                          <div className="flex flex-col">
+                            <span className="text-gray-600 dark:text-gray-400">Gender:</span>
+                            <span className="font-medium text-gray-900 dark:text-white mt-1 capitalize">
+                              {actionsModal.user.gender}
+                            </span>
+                          </div>
+                        )}
+                        {actionsModal.user.last_donation_date && (
+                          <div className="flex flex-col col-span-2">
+                            <span className="text-gray-600 dark:text-gray-400">Last Donation:</span>
+                            <span className="font-medium text-gray-900 dark:text-white mt-1">
+                              {new Date(actionsModal.user.last_donation_date).toLocaleDateString()}
+                            </span>
+                          </div>
+                        )}
+                        {actionsModal.user.medical_conditions && (
+                          <div className="flex flex-col col-span-2">
+                            <span className="text-gray-600 dark:text-gray-400">Medical Conditions:</span>
+                            <span className="font-medium text-gray-900 dark:text-white mt-1 text-sm">
+                              {actionsModal.user.medical_conditions}
+                            </span>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>

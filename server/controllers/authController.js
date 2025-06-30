@@ -187,7 +187,8 @@ export const updateProfile = async (req, res, next) => {
       'gender',
       'emergency_contact',
       'medical_conditions',
-      'blood_type'
+      'blood_type',
+      'is_donor'
     ];
 
     const updateData = {};
@@ -395,6 +396,88 @@ export const getAdminStats = async (req, res, next) => {
         totalUsers,
         activeDonors,
         pendingRequests
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Register donor with extended information
+// @route   POST /api/v1/auth/register-donor
+// @access  Private (user must be logged in)
+export const registerDonor = async (req, res, next) => {
+  try {
+    console.log('=== DONOR REGISTRATION DEBUG ===');
+    console.log('Request body:', JSON.stringify(req.body, null, 2));
+    
+    // Check for validation errors
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      console.log('Validation errors:', errors.array());
+      return next(new AppError('Validation failed', 400, errors.array()));
+    }
+
+    const { 
+      patientName, 
+      phoneNumber,
+      email,
+      dateOfBirth,
+      gender,
+      bloodType,
+      rhFactor,
+      lastDonation,
+      medicalConditions,
+      location,
+      street,
+      availableForEmergency
+    } = req.body;
+
+    // Combine blood type and Rh factor
+    const fullBloodType = bloodType && rhFactor ? `${bloodType}${rhFactor}` : null;
+
+    // Update user with extended donor information
+    const updateData = {
+      full_name: patientName,
+      phone: phoneNumber,
+      date_of_birth: dateOfBirth,
+      gender,
+      blood_type: fullBloodType,
+      last_donation_date: lastDonation,
+      medical_conditions: medicalConditions,
+      emergency_contact: phoneNumber, // Using phone as emergency contact for now
+      is_donor: true,
+      // Store location information in address field (can be improved with separate location table later)
+      address: location && location.province ? 
+        `${street || ''}, ${location.municipality || ''}, ${location.district || ''}, ${location.province || ''}`.replace(/^,\s*/, '').replace(/,\s*$/, '') 
+        : street || null
+    };
+
+    // Remove empty/null values
+    Object.keys(updateData).forEach(key => {
+      if (updateData[key] === null || updateData[key] === '' || updateData[key] === undefined) {
+        delete updateData[key];
+      }
+    });
+
+    // Update the user
+    const [updatedRowsCount] = await User.update(updateData, {
+      where: { id: req.user.id },
+      returning: true
+    });
+
+    if (updatedRowsCount === 0) {
+      return next(new AppError('User not found', 404));
+    }
+
+    // Get the updated user
+    const updatedUser = await User.findByPk(req.user.id);
+
+    res.status(200).json({
+      success: true,
+      message: 'Donor registration completed successfully',
+      data: {
+        user: updatedUser
       }
     });
   } catch (error) {

@@ -16,6 +16,7 @@ import PrivateRoute from './private/PrivateRoute.jsx';
 import ViewProfilePage from './private/pages/ViewProfilePage.jsx';
 import AdminDashboardPage from './private/pages/AdminDashboardPage.jsx';
 import AdminUsersPage from './private/pages/AdminUsersPage.jsx';
+import DonorListPage from './private/pages/DonorListPage.jsx';
 import 'react-toastify/dist/ReactToastify.css';
 import './App.css';
 
@@ -58,6 +59,7 @@ function App() {
                 <Route path="/emergency" element={<EmergencyPage />} />
                 <Route path="/admin" element={<PrivateRoute requiredRole="admin"><AdminDashboardPage isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} /></PrivateRoute>} />
                 <Route path="/admin/users" element={<PrivateRoute requiredRole="admin"><AdminUsersPage isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} /></PrivateRoute>} />
+                <Route path="/admin/donors" element={<PrivateRoute requiredRole="admin"><DonorListPage isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} /></PrivateRoute>} />
                 <Route path="*" element={<Navigate to="/" />} />
             </Routes>
                 {!isAdminRoute && <Footer />}

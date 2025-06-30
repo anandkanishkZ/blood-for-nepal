@@ -1,6 +1,7 @@
 import express from 'express';
 import {
   register,
+  registerDonor,
   login,
   logout,
   getMe,
@@ -15,6 +16,7 @@ import {
 import { protect, authorize } from '../middleware/auth.js';
 import {
   validateRegister,
+  validateDonorRegister,
   validateLogin,
   validateProfileUpdate,
   validatePasswordChange
@@ -29,6 +31,7 @@ router.post('/login', validateLogin, login);
 // Protected routes
 router.use(protect); // All routes after this middleware are protected
 
+router.post('/register-donor', validateDonorRegister, registerDonor);
 router.post('/logout', logout);
 router.get('/me', getMe);
 router.put('/profile', validateProfileUpdate, updateProfile);

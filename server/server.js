@@ -6,12 +6,14 @@ import cookieParser from 'cookie-parser';
 import rateLimit from 'express-rate-limit';
 import morgan from 'morgan';
 import dotenv from 'dotenv';
+import path from 'path';
 
 // Import configurations and utilities
 import config from './config/index.js';
 import { sequelize } from './models/index.js';
 import routes from './routes/index.js';
 import { globalErrorHandler, notFound } from './utils/errorHandler.js';
+import uploadRoutes from './routes/uploadRoutes.js';
 
 // Load environment variables
 dotenv.config();
@@ -91,6 +93,14 @@ if (config.NODE_ENV === 'development') {
 
 // API routes
 app.use(config.API_PREFIX, routes);
+app.use(config.API_PREFIX, uploadRoutes);
+
+// Serve uploaded files statically with proper headers
+app.use('/uploads', (req, res, next) => {
+  res.header('Cross-Origin-Resource-Policy', 'cross-origin');
+  res.header('Access-Control-Allow-Origin', '*');
+  next();
+}, express.static(path.join(process.cwd(), 'uploads')));
 
 // Health check endpoint
 app.get('/health', (req, res) => {

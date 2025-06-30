@@ -122,6 +122,11 @@ class User extends Model {
         allowNull: true,
         comment: 'Admin note for blocking user'
       },
+      avatar: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        comment: 'Profile photo URL path'
+      },
       last_donation_date: {
         type: DataTypes.DATEONLY,
         allowNull: true

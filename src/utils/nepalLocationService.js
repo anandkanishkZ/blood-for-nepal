@@ -24,7 +24,6 @@ class NepalLocationService {
       this.districts = districtsResponse.districts;
 
       this.isLoaded = true;
-      console.log('Nepal location service initialized successfully');
     } catch (error) {
       console.error('Failed to initialize Nepal location service:', error);
       throw error;
@@ -34,7 +33,6 @@ class NepalLocationService {
   // Build comprehensive search indexes for optimized searching
   async buildSearchIndexes() {
     const startTime = performance.now();
-    console.log('Building search indexes...');
     
     this.searchIndex.clear();
     this.phoneticIndex.clear();
@@ -90,7 +88,8 @@ class NepalLocationService {
     this.allLocationsFlat = allLocations;
     
     const endTime = performance.now();
-    console.log(`Search indexes built in ${(endTime - startTime).toFixed(2)}ms for ${allLocations.length} locations`);
+    // Performance info for optimization (keep for debugging if needed)
+    // console.log(`Search indexes built in ${(endTime - startTime).toFixed(2)}ms for ${allLocations.length} locations`);
   }
 
   // Generate search terms including variations and common misspellings
@@ -231,6 +230,7 @@ class NepalLocationService {
         // Clean district names (trim whitespace and normalize)
         const cleanDistricts = response.districts.map(district => {
           const cleaned = district.trim();
+          // Keep warning for data quality issues
           if (cleaned !== district) {
             console.warn(`Cleaned district name: "${district}" -> "${cleaned}"`);
           }
@@ -259,7 +259,6 @@ class NepalLocationService {
     if (!this.municipalsByDistrict.has(districtId)) {
       try {
         const filename = this.getDistrictFilename(districtId);
-        console.log(`Loading municipalities for district: "${districtId}" -> file: "${filename}.json"`);
         const response = await import(`../data/locations/municipalsByDistrict/${filename}.json`);
         this.municipalsByDistrict.set(districtId, response.municipals);
       } catch (error) {
@@ -404,7 +403,8 @@ class NepalLocationService {
       }));
     
     const endTime = performance.now();
-    console.log(`Search completed in ${(endTime - startTime).toFixed(2)}ms for query: "${query}" (${sortedResults.length} results)`);
+    // Performance info (commented for production)
+    // console.log(`Search completed in ${(endTime - startTime).toFixed(2)}ms for query: "${query}" (${sortedResults.length} results)`);
     
     return sortedResults;
   }

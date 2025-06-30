@@ -61,12 +61,6 @@ class ApiClient {
 
       if (!response.ok) {
         // Handle API errors
-        console.log('API Error Response:', { 
-          status: response.status, 
-          data: data,
-          fullResponse: data 
-        });
-        console.log('Full error data:', JSON.stringify(data, null, 2));
         const errorMessage = data?.message || data || `HTTP error! status: ${response.status}`;
         const error = new Error(errorMessage);
         error.status = response.status;
@@ -111,6 +105,57 @@ class ApiClient {
   async delete(endpoint) {
     return this.request(endpoint, { method: 'DELETE' });
   }
+
+  // File upload request
+  async uploadFile(endpoint, formData) {
+    const url = `${this.baseURL}${endpoint}`;
+    
+    // Always get fresh token from localStorage for uploads
+    const currentToken = this.getTokenFromStorage();
+    
+    // Update instance token if different
+    if (currentToken !== this.token) {
+      this.token = currentToken;
+    }
+    
+    const config = {
+      method: 'POST',
+      headers: {
+        // Don't set Content-Type for FormData, let browser set it with boundary
+        ...(this.token ? { Authorization: `Bearer ${this.token}` } : {})
+      },
+      credentials: 'include',
+      body: formData,
+    };
+
+    try {
+      const response = await fetch(url, config);
+      
+      const contentType = response.headers.get('content-type');
+      let data;
+      
+      if (contentType && contentType.includes('application/json')) {
+        data = await response.json();
+      } else {
+        data = await response.text();
+      }
+
+      if (!response.ok) {
+        const errorMessage = data?.message || data || `HTTP error! status: ${response.status}`;
+        const error = new Error(errorMessage);
+        error.status = response.status;
+        error.data = data;
+        throw error;
+      }
+
+      return data;
+    } catch (error) {
+      if (error.name === 'TypeError' && error.message.includes('fetch')) {
+        throw new Error('Network error: Unable to connect to the server. Please check your internet connection.');
+      }
+      throw error;
+    }
+  }
 }
 
 // Create singleton instance
@@ -124,6 +169,12 @@ export const authAPI = {
     if (response.data?.token) {
       apiClient.setToken(response.data.token);
     }
+    return response;
+  },
+
+  // Register donor with extended information (for authenticated users)
+  registerDonor: async (donorData) => {
+    const response = await apiClient.post('/auth/register-donor', donorData);
     return response;
   },
 
