@@ -57,7 +57,6 @@ const RegisterPage = () => {
     setIsSubmitting(true);
     
     try {
-      console.log('Registration data being sent:', formData);
       const result = await register(formData);
       
       if (result.success) {
@@ -67,7 +66,6 @@ const RegisterPage = () => {
         showToast.register.error(result.error);
       }
     } catch (error) {
-      console.error('Registration error:', error);
       showToast.register.error('An unexpected error occurred. Please try again.');
     } finally {
       setIsSubmitting(false);

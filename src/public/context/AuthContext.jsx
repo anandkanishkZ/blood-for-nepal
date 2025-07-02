@@ -82,10 +82,14 @@ export const AuthProvider = ({ children }) => {
     isCheckingAuth.current = true;
     try {
       const response = await authAPI.getMe();
+      
+      // Update localStorage with fresh user data
+      localStorage.setItem('user', JSON.stringify(response.data.user));
+      
       dispatch({ type: AUTH_ACTIONS.SET_USER, payload: response.data.user });
     } catch (error) {
-      console.error('Auth check failed:', error);
       localStorage.removeItem('token');
+      localStorage.removeItem('user');
       dispatch({ type: AUTH_ACTIONS.LOGOUT });
     } finally {
       isCheckingAuth.current = false;
@@ -133,7 +137,7 @@ export const AuthProvider = ({ children }) => {
     try {
       await authAPI.logout();
     } catch (error) {
-      console.error('Logout error:', error);
+      // Error handled, continue with logout
     } finally {
       dispatch({ type: AUTH_ACTIONS.LOGOUT });
     }
@@ -151,6 +155,21 @@ export const AuthProvider = ({ children }) => {
       const errorMessage = handleApiError(error);
       dispatch({ type: AUTH_ACTIONS.SET_ERROR, payload: errorMessage });
       return { success: false, error: errorMessage };
+    }
+  }, []);
+
+  // Force refresh user data (useful after avatar upload)
+  const forceRefreshUser = useCallback(async () => {
+    try {
+      const response = await authAPI.getMe();
+      
+      // Update localStorage with fresh user data
+      localStorage.setItem('user', JSON.stringify(response.data.user));
+      
+      dispatch({ type: AUTH_ACTIONS.SET_USER, payload: response.data.user });
+      return { success: true, user: response.data.user };
+    } catch (error) {
+      return { success: false, error: error.message };
     }
   }, []);
 
@@ -181,7 +200,8 @@ export const AuthProvider = ({ children }) => {
     changePassword,
     clearError,
     checkAuthStatus,
-  }), [state, login, register, logout, updateProfile, changePassword, clearError, checkAuthStatus]);
+    forceRefreshUser,
+  }), [state, login, register, logout, updateProfile, changePassword, clearError, checkAuthStatus, forceRefreshUser]);
 
   return (
     <AuthContext.Provider value={value}>

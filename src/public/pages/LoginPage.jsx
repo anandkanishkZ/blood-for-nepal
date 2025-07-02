@@ -61,7 +61,6 @@ const LoginPage = () => {
         showToast.login.error(result.error);
       }
     } catch (error) {
-      console.error('Login error:', error);
       showToast.login.error('An unexpected error occurred. Please try again.');
     } finally {
       setIsSubmitting(false);
