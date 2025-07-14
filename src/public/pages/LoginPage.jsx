@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff, LogIn } from 'lucide-react';
 import { showToast } from '../../utils/toast';
+import { showActionableToast } from '../components/common/ActionableToast';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
 
@@ -57,8 +58,28 @@ const LoginPage = () => {
       if (result.success) {
         showToast.login.success();
         // Redirect will happen automatically due to useEffect above
+      } else if (result.needsVerification) {
+        // User needs verification - redirect to verification method selection page
+        showToast.error(result.message);
+        // Create a temporary verification page state
+        navigate('/choose-verification-method', { 
+          state: { 
+            userId: result.data.userId,
+            email: result.data.email,
+            phone: result.data.phone,
+            currentVerificationMethod: result.data.verification_method 
+          } 
+        });
       } else {
-        showToast.login.error(result.error);
+        // Handle error response
+        const error = result.error;
+        
+        // Check if error is an object with action information
+        if (typeof error === 'object' && error.action) {
+          showActionableToast.error(error.message, error.action, error.actionText);
+        } else {
+          showToast.login.error(error);
+        }
       }
     } catch (error) {
       showToast.login.error('An unexpected error occurred. Please try again.');

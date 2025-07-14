@@ -2,17 +2,20 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff, User, UserPlus, Droplets } from 'lucide-react';
 import { showToast } from '../../utils/toast';
+import { showActionableToast } from '../components/common/ActionableToast';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
 import logo from '../../assets/logo-transparent.png';
 
 const RegisterPage = () => {
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
     bloodType: '',
-    password: ''
+    password: '',
+    confirmPassword: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   
@@ -63,7 +66,15 @@ const RegisterPage = () => {
         showToast.register.success();
         // Redirect will happen automatically due to useEffect above
       } else {
-        showToast.register.error(result.error);
+        // Handle error response
+        const error = result.error;
+        
+        // Check if error is an object with action information
+        if (typeof error === 'object' && error.action) {
+          showActionableToast.error(error.message, error.action, error.actionText);
+        } else {
+          showToast.register.error(error);
+        }
       }
     } catch (error) {
       showToast.register.error('An unexpected error occurred. Please try again.');

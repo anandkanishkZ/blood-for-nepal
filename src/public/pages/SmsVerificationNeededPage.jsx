@@ -1,0 +1,178 @@
+import React, { useState, useEffect } from 'react';
+import { useLocation, useNavigate, Link } from 'react-router-dom';
+import { Phone, RefreshCw, ArrowLeft, AlertCircle, CheckCircle, MessageSquare } from 'lucide-react';
+import { showToast } from '../../utils/toast';
+import { authAPI } from '../../utils/api';
+import logo from '../../assets/logo-transparent.png';
+
+const SmsVerificationNeededPage = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [isResending, setIsResending] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
+
+  // Get user data from navigation state
+  const userPhone = location.state?.userPhone;
+  const userId = location.state?.userId;
+  const verificationMethod = location.state?.verificationMethod || 'sms';
+
+  // Redirect to login if no user data
+  useEffect(() => {
+    if (!userPhone || !userId) {
+      navigate('/login', { replace: true });
+    }
+  }, [userPhone, userId, navigate]);
+
+  // Handle resend cooldown
+  useEffect(() => {
+    if (resendCooldown > 0) {
+      const timer = setTimeout(() => {
+        setResendCooldown(resendCooldown - 1);
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [resendCooldown]);
+
+  const handleResendVerification = async () => {
+    if (resendCooldown > 0) return;
+    
+    setIsResending(true);
+    try {
+      const response = await authAPI.resendVerification(userId);
+      showToast.success(response.message || 'Verification SMS sent successfully!');
+      setResendCooldown(60); // 1 minute cooldown
+    } catch (error) {
+      showToast.error(error.message || 'Failed to resend verification SMS. Please try again.');
+    } finally {
+      setIsResending(false);
+    }
+  };
+
+  const handleBackToLogin = () => {
+    navigate('/login', { replace: true });
+  };
+
+  const handleSwitchMethod = () => {
+    navigate('/choose-verification-method', {
+      state: {
+        userId,
+        phone: userPhone,
+        fromSwitch: true
+      }
+    });
+  };
+
+  if (!userPhone || !userId) {
+    return null; // Will redirect via useEffect
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-green-50 flex items-center justify-center p-4">
+      <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 relative overflow-hidden">
+        {/* Decorative elements */}
+        <div className="absolute top-0 right-0 w-32 h-32 bg-green-100 rounded-full -translate-y-16 translate-x-16 opacity-50"></div>
+        <div className="absolute bottom-0 left-0 w-24 h-24 bg-green-100 rounded-full translate-y-12 -translate-x-12 opacity-50"></div>
+        
+        {/* Logo */}
+        <div className="text-center mb-6 relative z-10">
+          <img src={logo} alt="Blood For Nepal" className="h-12 w-15 mx-auto" />
+        </div>
+        
+        <div className="relative z-10">
+          <div className="text-center space-y-6">
+            <div className="mx-auto w-20 h-20 bg-green-100 rounded-full flex items-center justify-center">
+              <Phone className="w-12 h-12 text-green-500" />
+            </div>
+            
+            <div className="space-y-3">
+              <h2 className="text-2xl font-bold text-gray-900">SMS Verification Required</h2>
+              <p className="text-gray-600 leading-relaxed">
+                Your account needs to be verified before you can log in. We've sent a verification code to your phone number.
+              </p>
+            </div>
+
+            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+              <div className="flex items-start space-x-3">
+                <CheckCircle className="w-5 h-5 text-blue-500 mt-0.5" />
+                <div className="text-sm text-blue-800">
+                  <p className="font-medium mb-1">Account Created Successfully!</p>
+                  <p>We've sent a verification code to your phone number.</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
+              <div className="text-sm text-yellow-800">
+                <p className="font-medium mb-2">Next Steps:</p>
+                <ul className="space-y-1 text-left">
+                  <li>• Enter the verification code sent to your phone</li>
+                  <li>• The code is valid for 10 minutes</li>
+                  <li>• Check your message inbox for the SMS</li>
+                  <li>• If you don't receive the code, try resending it</li>
+                </ul>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <button
+                onClick={() => navigate('/verify/' + userId)}
+                className="w-full bg-green-600 text-white py-3 px-6 rounded-xl hover:bg-green-700 font-medium transition-colors flex items-center justify-center gap-2"
+              >
+                <MessageSquare className="h-4 w-4" />
+                Enter Verification Code
+              </button>
+
+              <button
+                onClick={handleResendVerification}
+                disabled={isResending || resendCooldown > 0}
+                className="w-full bg-gray-100 text-gray-800 py-3 px-6 rounded-xl hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors flex items-center justify-center gap-2"
+              >
+                {isResending ? (
+                  <>
+                    <RefreshCw className="h-4 w-4 animate-spin" />
+                    Sending...
+                  </>
+                ) : resendCooldown > 0 ? (
+                  <>
+                    <RefreshCw className="h-4 w-4" />
+                    Resend in {resendCooldown}s
+                  </>
+                ) : (
+                  <>
+                    <Phone className="h-4 w-4" />
+                    Resend Verification Code
+                  </>
+                )}
+              </button>
+              
+              <div className="flex space-x-2">
+                <button
+                  onClick={handleBackToLogin}
+                  className="flex-1 bg-gray-200 text-gray-800 py-3 px-4 rounded-xl hover:bg-gray-300 transition-colors flex items-center justify-center gap-2"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  Back to Login
+                </button>
+                
+                <button
+                  onClick={handleSwitchMethod}
+                  className="flex-1 bg-blue-100 text-blue-800 py-3 px-4 rounded-xl hover:bg-blue-200 transition-colors flex items-center justify-center gap-2 text-center"
+                >
+                  Switch to Email
+                </button>
+              </div>
+            </div>
+
+            <div className="border-t border-gray-200 pt-4">
+              <p className="text-sm text-gray-500 text-center">
+                SMS sent to: <span className="font-medium text-gray-700">{userPhone}</span>
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default SmsVerificationNeededPage;

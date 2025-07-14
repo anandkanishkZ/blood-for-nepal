@@ -1,8 +1,11 @@
 import jwt from 'jsonwebtoken';
 import { validationResult } from 'express-validator';
+import { Op } from 'sequelize';
 import models from '../models/index.js';
 import config from '../config/index.js';
 import { AppError } from '../utils/errorHandler.js';
+import verificationService from '../services/verificationService.js';
+import emailService from '../services/emailService.js';
 
 const { User } = models;
 
@@ -36,36 +39,120 @@ export const register = async (req, res, next) => {
       return next(new AppError('Validation failed', 400, errors.array()));
     }
 
-    const { fullName, email, password, bloodType } = req.body;
+    const { 
+      fullName, 
+      email, 
+      password, 
+      bloodType, 
+      phone, 
+      verificationMethod = 'email' // Default to email if not specified
+    } = req.body;
 
-    // Check if user already exists
-    const existingUser = await User.findOne({ where: { email } });
-    if (existingUser) {
-      return next(new AppError('User with this email already exists', 400));
+    // Validate verification method
+    if (!['email', 'sms'].includes(verificationMethod)) {
+      return next(new AppError('Invalid verification method. Choose email or sms.', 400));
     }
 
-    // Create user
-    const user = await User.create({
+    // Validate required fields based on verification method
+    if (verificationMethod === 'sms' && !phone) {
+      return next(new AppError('Phone number is required for SMS verification', 400));
+    }
+
+    // Check if user already exists
+    const whereCondition = email ? { email } : {};
+    if (phone && verificationMethod === 'sms') {
+      whereCondition[Op.or] = [{ email }, { phone }];
+    }
+
+    const existingUser = await User.findOne({ where: whereCondition });
+
+    if (existingUser) {
+      // Check if user is already verified
+      if (existingUser.is_email_verified || existingUser.is_phone_verified) {
+        return next(new AppError(
+          'An account with this email already exists. Please login or use the forgot password option if you\'ve forgotten your password.', 
+          409
+        ));
+      }
+      
+      // User exists but not verified - resend verification
+      try {
+        const result = await verificationService.sendVerification(existingUser, verificationMethod);
+        
+        return res.status(200).json({
+          success: true,
+          message: `खाता पहिले नै छ। ${result.message} (Account already exists. ${result.message})`,
+          data: {
+            userId: existingUser.id,
+            method: result.method,
+            expiresIn: result.expiresIn,
+            destination: result.destination,
+            needsVerification: true,
+            isDevelopmentMode: result.isDevelopmentMode,
+            otp: result.otp,
+            fallbackMode: result.fallbackMode
+          }
+        });
+      } catch (verificationError) {
+        return next(verificationError);
+      }
+    }
+
+    // Create new user
+    const userData = {
       full_name: fullName,
       email,
       password,
-      blood_type: bloodType
-    });
+      blood_type: bloodType,
+      is_email_verified: false,
+      is_phone_verified: false,
+      verification_attempts: 0
+    };
 
-    // Generate token
-    const token = generateToken(user.id);
+    // Add phone if provided
+    if (phone) {
+      userData.phone = phone;
+    }
 
-    // Set cookie
-    setTokenCookie(res, token);
+    const user = await User.create(userData);
 
-    res.status(201).json({
-      success: true,
-      message: 'User registered successfully',
-      data: {
-        user,
-        token
-      }
-    });
+    // Send verification based on chosen method
+    try {
+      const result = await verificationService.sendVerification(user, verificationMethod);
+
+      res.status(201).json({
+        success: true,
+        message: `खाता सफलतापूर्वक बनाइयो! ${result.message} (Registration successful! ${result.message})`,
+        data: {
+          userId: user.id,
+          method: result.method,
+          expiresIn: result.expiresIn,
+          destination: result.destination,
+          user: {
+            id: user.id,
+            full_name: user.full_name,
+            email: user.email,
+            blood_type: user.blood_type,
+            phone: user.phone ? `****${user.phone.slice(-4)}` : null
+          },
+          needsVerification: true,
+          isDevelopmentMode: result.isDevelopmentMode,
+          otp: result.otp,
+          fallbackMode: result.fallbackMode
+        }
+      });
+    } catch (verificationError) {
+      // If verification fails, we should still inform about successful registration
+      res.status(201).json({
+        success: true,
+        message: 'खाता सफलतापूर्वक बनाइयो तर प्रमाणीकरण पठाउन असफल भयो। कृपया फेरि प्रयास गर्नुहोस्। (Registration successful but verification failed to send. Please try again.)',
+        data: {
+          userId: user.id,
+          needsVerification: true,
+          verificationError: verificationError.message
+        }
+      });
+    }
   } catch (error) {
     next(error);
   }
@@ -91,7 +178,7 @@ export const login = async (req, res, next) => {
     });
 
     if (!user) {
-      return next(new AppError('Invalid email or password', 401));
+      return next(new AppError('No account found with this email address. Please create an account first.', 404));
     }
 
     // Check if account is active
@@ -103,6 +190,23 @@ export const login = async (req, res, next) => {
     const isValidPassword = await user.validatePassword(password);
     if (!isValidPassword) {
       return next(new AppError('Invalid email or password', 401));
+    }
+
+    // Check if user is verified (either email or phone)
+    if (!user.is_email_verified && !user.is_phone_verified) {
+      return res.status(200).json({
+        success: false,
+        needsVerification: true,
+        message: 'Account verification required. Please verify your email or phone first.',
+        data: {
+          userId: user.id,
+          email: user.email,
+          phone: user.phone,
+          is_email_verified: user.is_email_verified,
+          is_phone_verified: user.is_phone_verified,
+          verification_method: user.verification_method || 'email'
+        }
+      });
     }
 
     // Generate token
@@ -412,13 +516,9 @@ export const getAdminStats = async (req, res, next) => {
 // @access  Private (user must be logged in)
 export const registerDonor = async (req, res, next) => {
   try {
-    console.log('=== DONOR REGISTRATION DEBUG ===');
-    console.log('Request body:', JSON.stringify(req.body, null, 2));
-    
     // Check for validation errors
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      console.log('Validation errors:', errors.array());
       return next(new AppError('Validation failed', 400, errors.array()));
     }
 
@@ -485,6 +585,293 @@ export const registerDonor = async (req, res, next) => {
       }
     });
   } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Verify user (email or SMS)
+// @route   POST /api/v1/auth/verify
+// @access  Public
+export const verifyUser = async (req, res, next) => {
+  try {
+    const { userId, code, method } = req.body;
+
+    if (!userId || !code || !method) {
+      return next(new AppError('User ID, verification code, and method are required', 400));
+    }
+
+    const user = await User.findByPk(userId);
+    if (!user) {
+      return next(new AppError('User not found', 404));
+    }
+
+    // Verify the code
+    const verificationResult = await verificationService.verifyCode(user, code, method);
+
+    // Generate login token
+    const token = generateToken(user.id);
+    setTokenCookie(res, token);
+
+    // Send welcome email if email was verified
+    if (method === 'email' && user.is_email_verified) {
+      try {
+        await emailService.sendWelcomeEmail(user);
+      } catch (emailError) {
+        console.log('Welcome email failed (non-critical):', emailError.message);
+      }
+    }
+
+    // Refresh user data
+    await user.reload();
+
+    res.status(200).json({
+      success: true,
+      message: `${verificationResult.message} Blood For Nepal मा स्वागत छ! (${verificationResult.message} Welcome to Blood For Nepal!)`,
+      data: {
+        user: {
+          id: user.id,
+          full_name: user.full_name,
+          email: user.email,
+          phone: user.phone,
+          blood_type: user.blood_type,
+          is_email_verified: user.is_email_verified,
+          is_phone_verified: user.is_phone_verified,
+          is_donor: user.is_donor,
+          role: user.role
+        },
+        token,
+        verificationStatus: verificationService.getVerificationStatus(user)
+      }
+    });
+
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Resend verification
+// @route   POST /api/v1/auth/resend-verification
+// @access  Public
+export const resendVerification = async (req, res, next) => {
+  try {
+    const { userId } = req.body;
+
+    if (!userId) {
+      return next(new AppError('User ID is required', 400));
+    }
+
+    const user = await User.findByPk(userId);
+    if (!user) {
+      return next(new AppError('User not found', 404));
+    }
+
+    if (user.is_email_verified || user.is_phone_verified) {
+      return next(new AppError('User is already verified', 400));
+    }
+
+    const result = await verificationService.resendVerification(user);
+
+    res.status(200).json({
+      success: true,
+      message: result.message,
+      data: {
+        method: result.method,
+        expiresIn: result.expiresIn,
+        destination: result.destination,
+        isDevelopmentMode: result.isDevelopmentMode,
+        otp: result.otp,
+        fallbackMode: result.fallbackMode
+      }
+    });
+
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Switch verification method
+// @route   POST /api/v1/auth/switch-verification
+// @access  Public
+export const switchVerificationMethod = async (req, res, next) => {
+  try {
+    const { userId, newMethod } = req.body;
+
+    if (!userId || !newMethod) {
+      return next(new AppError('User ID and new method are required', 400));
+    }
+
+    if (!['email', 'sms'].includes(newMethod)) {
+      return next(new AppError('Invalid verification method', 400));
+    }
+
+    const user = await User.findByPk(userId);
+    if (!user) {
+      return next(new AppError('User not found', 404));
+    }
+
+    if (user.is_email_verified || user.is_phone_verified) {
+      return next(new AppError('User is already verified', 400));
+    }
+
+    const result = await verificationService.switchVerificationMethod(user, newMethod);
+
+    res.status(200).json({
+      success: true,
+      message: result.message,
+      data: {
+        method: result.method,
+        expiresIn: result.expiresIn,
+        destination: result.destination,
+        isDevelopmentMode: result.isDevelopmentMode,
+        otp: result.otp,
+        fallbackMode: result.fallbackMode
+      }
+    });
+
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Get verification status
+// @route   GET /api/v1/auth/verification-status/:userId
+// @access  Public
+export const getVerificationStatus = async (req, res, next) => {
+  try {
+    const { userId } = req.params;
+
+    const user = await User.findByPk(userId);
+    if (!user) {
+      return next(new AppError('User not found', 404));
+    }
+
+    const status = verificationService.getVerificationStatus(user);
+
+    res.status(200).json({
+      success: true,
+      data: {
+        userId: user.id,
+        verificationRequired: verificationService.isVerificationRequired(user),
+        ...status
+      }
+    });
+
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Verify email via link (for email verification)
+// @route   GET /api/v1/auth/verify-email
+// @access  Public
+export const verifyEmailLink = async (req, res, next) => {
+  try {
+    const { token, email } = req.query;
+    
+    console.log('📧 Email verification request:', { token, email });
+
+    if (!token || !email) {
+      console.log('❌ Missing token or email');
+      return next(new AppError('Invalid verification link', 400));
+    }
+
+    // First, check if user exists and is already verified
+    const existingUser = await User.findOne({
+      where: {
+        email: decodeURIComponent(email)
+      }
+    });
+
+    if (existingUser && existingUser.is_email_verified) {
+      console.log('✅ User already verified, redirecting to success');
+      // Generate login token for already verified user
+      const loginToken = generateToken(existingUser.id);
+      setTokenCookie(res, loginToken);
+      return res.status(200).json({
+        success: true,
+        message: 'इमेल पहिले नै प्रमाणीकरण भयो! तपाईं अब लगइन हुनुभएको छ। (Email already verified! You are now logged in.)',
+        data: {
+          user: {
+            id: existingUser.id,
+            full_name: existingUser.full_name,
+            email: existingUser.email,
+            blood_type: existingUser.blood_type,
+            is_email_verified: existingUser.is_email_verified,
+            is_phone_verified: existingUser.is_phone_verified
+          },
+          token: loginToken,
+          redirectTo: '/dashboard',
+          alreadyVerified: true
+        }
+      });
+    }
+
+    // Check for pending verification (token must match and not be expired)
+    const user = await User.findOne({
+      where: {
+        email: decodeURIComponent(email),
+        email_verification_token: token,
+        verification_expires: {
+          [Op.gt]: new Date()
+        }
+      }
+    });
+
+    // If not found, do NOT verify, and do NOT update user
+    if (!user) {
+      console.log('❌ User not found or token expired/invalid');
+      return res.status(400).json({
+        success: false,
+        message: 'अवैध वा समाप्त भएको प्रमाणीकरण लिंक। (Invalid or expired verification link.)',
+        data: { alreadyVerified: false }
+      });
+    }
+
+    console.log('✅ User found, proceeding with verification');
+
+    // Verify using the verification service
+    const verificationResult = await verificationService.verifyCode(user, token, 'email');
+    
+    console.log('✅ Verification service completed:', verificationResult);
+
+    // Generate login token
+    const loginToken = generateToken(user.id);
+    setTokenCookie(res, loginToken);
+
+    // Send welcome email
+    try {
+      await emailService.sendWelcomeEmail(user);
+    } catch (emailError) {
+      console.log('Welcome email failed (non-critical):', emailError.message);
+    }
+
+    // Refresh user data
+    await user.reload();
+
+    console.log('✅ Email verification completed successfully');
+
+    res.status(200).json({
+      success: true,
+      message: 'इमेल सफलतापूर्वक प्रमाणीकरण भयो! तपाईं अब लगइन हुनुभएको छ। (Email verified successfully! You are now logged in.)',
+      data: {
+        user: {
+          id: user.id,
+          full_name: user.full_name,
+          email: user.email,
+          blood_type: user.blood_type,
+          is_email_verified: user.is_email_verified,
+          is_phone_verified: user.is_phone_verified
+        },
+        token: loginToken,
+        redirectTo: '/dashboard'
+      }
+    });
+  } catch (error) {
+    console.error('❌ Email verification error:', error);
+    console.error('Error type:', typeof error);
+    console.error('Error constructor:', error.constructor.name);
+    console.error('Error message:', error.message);
+    console.error('Error stack:', error.stack);
     next(error);
   }
 };

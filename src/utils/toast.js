@@ -54,6 +54,7 @@ export const showToast = {
   login: {
     success: () => showToast.success('Welcome back! Login successful.'),
     error: (message) => showToast.error(message || 'Login failed. Please try again.'),
+    userNotFound: (message) => showToast.error(message || 'No account found with this email address.'),
   },
 
   logout: {
@@ -63,6 +64,7 @@ export const showToast = {
   register: {
     success: () => showToast.success('Account created successfully! Welcome to Blood For Nepal.'),
     error: (message) => showToast.error(message || 'Registration failed. Please try again.'),
+    userExists: (message) => showToast.error(message || 'An account with this email already exists.'),
   },
 
   profile: {

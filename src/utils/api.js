@@ -61,7 +61,15 @@ class ApiClient {
 
       if (!response.ok) {
         // Handle API errors
-        const errorMessage = data?.message || data || `HTTP error! status: ${response.status}`;
+        let errorMessage;
+        
+        if (data && typeof data === 'object') {
+          // Try to extract error message from different response structures
+          errorMessage = data.message || data.error?.message || data.error || JSON.stringify(data);
+        } else {
+          errorMessage = data || `HTTP error! status: ${response.status}`;
+        }
+        
         const error = new Error(errorMessage);
         error.status = response.status;
         error.data = data;
@@ -235,6 +243,35 @@ export const authAPI = {
   getAdminStats: async () => {
     return apiClient.get('/auth/admin/stats');
   },
+
+  // Verification endpoints
+  verifyUser: async (verificationData) => {
+    const response = await apiClient.post('/auth/verify', verificationData);
+    if (response.data?.token) {
+      apiClient.setToken(response.data.token);
+    }
+    return response;
+  },
+
+  resendVerification: async (userId) => {
+    return apiClient.post('/auth/resend-verification', { userId });
+  },
+
+  switchVerificationMethod: async (userId, newMethod) => {
+    return apiClient.post('/auth/switch-verification', { userId, newMethod });
+  },
+
+  getVerificationStatus: async (userId) => {
+    return apiClient.get(`/auth/verification-status/${userId}`);
+  },
+
+  verifyEmailLink: async (token, email) => {
+    const response = await apiClient.get(`/auth/verify-email?token=${token}&email=${encodeURIComponent(email)}`);
+    if (response.data?.token) {
+      apiClient.setToken(response.data.token);
+    }
+    return response;
+  },
 };
 
 // Health check
@@ -248,13 +285,41 @@ export const healthAPI = {
 export const handleApiError = (error) => {
   if (error.status === 401) {
     // Token expired or invalid
-    apiClient.setToken(null);
-    window.location.href = '/login';
-    return 'Session expired. Please login again.';
+    if (
+      error.message &&
+      (error.message.toLowerCase().includes('token') ||
+       error.message.toLowerCase().includes('session'))
+    ) {
+      apiClient.setToken(null);
+      window.location.href = '/login';
+      return 'Session expired. Please login again.';
+    }
+    // Otherwise, show the real backend message
+    return error.data?.message || error.message || 'Unauthorized. Please try again.';
   } else if (error.status === 403) {
     return 'Access denied. You do not have permission to perform this action.';
   } else if (error.status === 404) {
-    return 'Resource not found.';
+    // Handle user not found during login
+    const message = error.data?.message || error.message || 'Resource not found.';
+    if (message.includes('No account found')) {
+      return {
+        message: message,
+        action: 'register',
+        actionText: 'Create Account'
+      };
+    }
+    return message;
+  } else if (error.status === 409) {
+    // Handle duplicate account during registration
+    const message = error.data?.message || error.message || 'Conflict occurred.';
+    if (message.includes('account with this email already exists')) {
+      return {
+        message: message,
+        action: 'login',
+        actionText: 'Login Instead'
+      };
+    }
+    return message;
   } else if (error.status === 422 || error.status === 400) {
     // Validation errors or duplicate data
     if (error.data?.validationErrors) {
@@ -265,7 +330,11 @@ export const handleApiError = (error) => {
     // Handle specific duplicate email error
     const message = error.data?.message || error.message || 'Validation failed.';
     if (message.includes('already exists')) {
-      return 'This email is already registered. Please use a different email or try logging in.';
+      return {
+        message: message,
+        action: 'login',
+        actionText: 'Login Instead'
+      };
     }
     return message;
   } else if (error.status >= 500) {

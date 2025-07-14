@@ -5,18 +5,18 @@ import compression from 'compression';
 import cookieParser from 'cookie-parser';
 import rateLimit from 'express-rate-limit';
 import morgan from 'morgan';
-import dotenv from 'dotenv';
 import path from 'path';
 
-// Import configurations and utilities
+// Load environment variables FIRST
+import dotenv from 'dotenv';
+dotenv.config();
+
+// Import configurations and utilities (after dotenv is loaded)
 import config from './config/index.js';
 import { sequelize } from './models/index.js';
 import routes from './routes/index.js';
 import { globalErrorHandler, notFound } from './utils/errorHandler.js';
 import uploadRoutes from './routes/uploadRoutes.js';
-
-// Load environment variables
-dotenv.config();
 
 // Create Express app
 const app = express();
@@ -137,11 +137,9 @@ const startServer = async () => {
     await sequelize.authenticate();
     console.log('✅ Database connection established successfully');
 
-    // Sync database models
-    if (config.NODE_ENV === 'development') {
-      await sequelize.sync({ alter: true });
-      console.log('✅ Database models synchronized');
-    }
+    // Database models are managed through migrations
+    // Sync is disabled to avoid conflicts with migration-managed schema
+    console.log('✅ Database models ready (managed via migrations)');
 
     // Start server
     const PORT = config.PORT;

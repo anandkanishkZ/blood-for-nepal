@@ -107,13 +107,31 @@ export const AuthProvider = ({ children }) => {
       dispatch({ type: AUTH_ACTIONS.CLEAR_ERROR });
 
       const response = await authAPI.login(credentials);
+      
+      // Check if user needs verification
+      if (response.needsVerification) {
+        return { 
+          success: false, 
+          needsVerification: true, 
+          message: response.message,
+          data: response.data
+        };
+      }
+
       dispatch({ type: AUTH_ACTIONS.SET_USER, payload: response.data.user });
       
       return { success: true, message: response.message };
     } catch (error) {
       const errorMessage = handleApiError(error);
-      dispatch({ type: AUTH_ACTIONS.SET_ERROR, payload: errorMessage });
-      return { success: false, error: errorMessage };
+      
+      // Check if errorMessage is an object with action information
+      if (typeof errorMessage === 'object' && errorMessage.action) {
+        dispatch({ type: AUTH_ACTIONS.SET_ERROR, payload: errorMessage.message });
+        return { success: false, error: errorMessage };
+      } else {
+        dispatch({ type: AUTH_ACTIONS.SET_ERROR, payload: errorMessage });
+        return { success: false, error: errorMessage };
+      }
     }
   }, []);
 
@@ -128,8 +146,15 @@ export const AuthProvider = ({ children }) => {
       return { success: true, message: response.message };
     } catch (error) {
       const errorMessage = handleApiError(error);
-      dispatch({ type: AUTH_ACTIONS.SET_ERROR, payload: errorMessage });
-      return { success: false, error: errorMessage };
+      
+      // Check if errorMessage is an object with action information
+      if (typeof errorMessage === 'object' && errorMessage.action) {
+        dispatch({ type: AUTH_ACTIONS.SET_ERROR, payload: errorMessage.message });
+        return { success: false, error: errorMessage };
+      } else {
+        dispatch({ type: AUTH_ACTIONS.SET_ERROR, payload: errorMessage });
+        return { success: false, error: errorMessage };
+      }
     }
   }, []);
 

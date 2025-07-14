@@ -9,6 +9,13 @@ import ScrollToTop from './public/components/common/ScrollToTop';
 import HomePage from './public/pages/HomePage';
 import LoginPage from './public/pages/LoginPage';
 import RegisterPage from './public/pages/RegisterPage';
+import NewRegisterPage from './public/pages/NewRegisterPage';
+import VerificationMethodSelectionPage from './public/pages/VerificationMethodSelectionPage';
+import SmsVerificationNeededPage from './public/pages/SmsVerificationNeededPage';
+import VerificationPage from './public/pages/VerificationPage';
+import EmailVerificationPage from './public/pages/EmailVerificationPage';
+import EmailVerificationNeededPage from './public/pages/EmailVerificationNeededPage';
+import DashboardPage from './public/pages/DashboardPage';
 import DonorRegistrationPage from './public/pages/DonorRegistrationPage';
 import EducationPage from './public/pages/EducationPage';
 import EmergencyPage from './public/pages/EmergencyPage';
@@ -16,6 +23,7 @@ import PrivateRoute from './private/PrivateRoute.jsx';
 import ViewProfilePage from './private/pages/ViewProfilePage.jsx';
 import AdminDashboardPage from './private/pages/AdminDashboardPage.jsx';
 import AdminUsersPage from './private/pages/AdminUsersPage.jsx';
+import AdminSettingsPage from './private/pages/AdminSettingsPage.jsx';
 import DonorListPage from './private/pages/DonorListPage.jsx';
 import 'react-toastify/dist/ReactToastify.css';
 import './App.css';
@@ -50,7 +58,14 @@ function App() {
                 <Routes>
                 <Route path="/" element={<HomePage />} />
                 <Route path="/login" element={<LoginPage />} />
-                <Route path="/register" element={<RegisterPage />} />
+                <Route path="/register" element={<NewRegisterPage />} />
+                <Route path="/register-old" element={<RegisterPage />} />
+                <Route path="/verify/:userId" element={<VerificationPage />} />
+                <Route path="/verify-email" element={<EmailVerificationPage />} />
+                <Route path="/choose-verification-method" element={<VerificationMethodSelectionPage />} />
+                <Route path="/email-verification-needed" element={<EmailVerificationNeededPage />} />
+                <Route path="/sms-verification-needed" element={<SmsVerificationNeededPage />} />
+                <Route path="/dashboard" element={<PrivateRoute><DashboardPage /></PrivateRoute>} />
                 <Route path="/register-donor" element={<DonorRegistrationPage />} />
                 <Route path="/profile" element={<PrivateRoute><ViewProfilePage /></PrivateRoute>} />
                 <Route path="/request" element={<div className="min-h-screen flex items-center justify-center"><h1 className="text-2xl font-bold text-gray-900 dark:text-white">Blood Request Page - Coming Soon</h1></div>} />
@@ -60,6 +75,7 @@ function App() {
                 <Route path="/admin" element={<PrivateRoute requiredRole="admin"><AdminDashboardPage isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} /></PrivateRoute>} />
                 <Route path="/admin/users" element={<PrivateRoute requiredRole="admin"><AdminUsersPage isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} /></PrivateRoute>} />
                 <Route path="/admin/donors" element={<PrivateRoute requiredRole="admin"><DonorListPage isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} /></PrivateRoute>} />
+                <Route path="/admin/settings" element={<PrivateRoute requiredRole="admin"><AdminSettingsPage isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} /></PrivateRoute>} />
                 <Route path="*" element={<Navigate to="/" />} />
             </Routes>
                 {!isAdminRoute && <Footer />}

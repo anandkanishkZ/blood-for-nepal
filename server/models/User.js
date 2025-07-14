@@ -13,6 +13,10 @@ class User extends Model {
     delete values.password;
     delete values.reset_password_token;
     delete values.reset_password_expire;
+    delete values.email_verification_token;
+    delete values.sms_verification_otp;
+    delete values.verification_expires;
+    delete values.verification_attempts;
     return values;
   }
 
@@ -183,13 +187,38 @@ class User extends Model {
           }
         }
       },
+      verification_method: {
+        type: DataTypes.ENUM('email', 'sms'),
+        allowNull: true,
+        comment: 'User chosen verification method'
+      },
       is_email_verified: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false
+      },
+      is_phone_verified: {
         type: DataTypes.BOOLEAN,
         defaultValue: false
       },
       email_verification_token: {
         type: DataTypes.STRING,
-        allowNull: true
+        allowNull: true,
+        comment: 'Email verification token'
+      },
+      sms_verification_otp: {
+        type: DataTypes.STRING(6),
+        allowNull: true,
+        comment: 'SMS OTP for phone verification'
+      },
+      verification_expires: {
+        type: DataTypes.DATE,
+        allowNull: true,
+        comment: 'Expiration time for verification token/OTP'
+      },
+      verification_attempts: {
+        type: DataTypes.INTEGER,
+        defaultValue: 0,
+        comment: 'Number of verification attempts for security'
       },
       reset_password_token: {
         type: DataTypes.STRING,
