@@ -17,6 +17,7 @@ import EmailVerificationPage from './public/pages/EmailVerificationPage';
 import EmailVerificationNeededPage from './public/pages/EmailVerificationNeededPage';
 import DashboardPage from './public/pages/DashboardPage';
 import DonorRegistrationPage from './public/pages/DonorRegistrationPage';
+import RequestBloodPage from './public/pages/RequestBloodPage';
 import EducationPage from './public/pages/EducationPage';
 import EmergencyPage from './public/pages/EmergencyPage';
 import PrivateRoute from './private/PrivateRoute.jsx';
@@ -68,7 +69,7 @@ function App() {
                 <Route path="/dashboard" element={<PrivateRoute><DashboardPage /></PrivateRoute>} />
                 <Route path="/register-donor" element={<DonorRegistrationPage />} />
                 <Route path="/profile" element={<PrivateRoute><ViewProfilePage /></PrivateRoute>} />
-                <Route path="/request" element={<div className="min-h-screen flex items-center justify-center"><h1 className="text-2xl font-bold text-gray-900 dark:text-white">Blood Request Page - Coming Soon</h1></div>} />
+                <Route path="/request" element={<RequestBloodPage />} />
                 <Route path="/find" element={<div className="min-h-screen flex items-center justify-center"><h1 className="text-2xl font-bold text-gray-900 dark:text-white">Find Donors Page - Coming Soon</h1></div>} />
                 <Route path="/education" element={<EducationPage />} />
                 <Route path="/emergency" element={<EmergencyPage />} />
