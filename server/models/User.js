@@ -285,8 +285,7 @@ class User extends Model {
 
   // Static method for associations
   static associate(models) {
-    // Define associations here when you add more models
-    // Example: User.hasMany(models.BloodRequest, { foreignKey: 'user_id' });
+    this.hasMany(models.BloodRequest, { foreignKey: 'user_id', as: 'blood_requests' });
   }
 }
 

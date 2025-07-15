@@ -19,6 +19,7 @@ import { globalErrorHandler, notFound } from './utils/errorHandler.js';
 import uploadRoutes from './routes/uploadRoutes.js';
 
 // Create Express app
+import bloodRequestRoutes from './routes/bloodRequest.js';
 const app = express();
 
 // Trust proxy for rate limiting and security
@@ -94,6 +95,7 @@ if (config.NODE_ENV === 'development') {
 // API routes
 app.use(config.API_PREFIX, routes);
 app.use(config.API_PREFIX, uploadRoutes);
+app.use(config.API_PREFIX + '/blood-requests', bloodRequestRoutes);
 
 // Serve uploaded files statically with proper headers
 app.use('/uploads', (req, res, next) => {

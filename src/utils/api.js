@@ -1,6 +1,82 @@
 // API Configuration and Utilities
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
 
+// Blood Request API
+export const bloodRequestAPI = {
+  // Submit a new blood request (with file upload)
+  submitRequest: async (data) => {
+    const formData = new FormData();
+    // Add all fields to formData
+    for (const key in data) {
+      if (key === 'location' && typeof data[key] === 'object') {
+        // Flatten location fields
+        for (const locKey in data.location) {
+          formData.append(locKey, data.location[locKey] || '');
+        }
+      } else if (key === 'prescription' && data.prescription) {
+        formData.append('prescription', data.prescription);
+      } else if (key !== 'prescriptionPreview') {
+        formData.append(key, data[key]);
+      }
+    }
+    // POST to /blood-requests (base URL already includes /api/v1)
+    return apiClient.uploadFile('/blood-requests', formData);
+  },
+  // Fetch all blood requests (admin)
+  getAll: async () => {
+    return apiClient.get('/blood-requests');
+  },
+  // Fetch a single blood request by ID (admin)
+  getById: async (id) => {
+    return apiClient.get(`/blood-requests/${id}`);
+  },
+  // Get prescription image URL for direct access
+  getPrescriptionImageUrl: (prescriptionUrl) => {
+    if (!prescriptionUrl) return null;
+    // Remove leading slash if present and construct full URL
+    const cleanUrl = prescriptionUrl.startsWith('/') ? prescriptionUrl.slice(1) : prescriptionUrl;
+    return `${API_BASE_URL.replace('/api/v1', '')}/${cleanUrl}`;
+  },
+  
+  // Delete blood request (admin) - Soft delete (move to trash)
+  delete: async (id) => {
+    return apiClient.delete(`/blood-requests/${id}`);
+  },
+  
+  // Permanently delete blood request (admin) - Hard delete from trash
+  permanentlyDelete: async (id) => {
+    return apiClient.delete(`/blood-requests/${id}/permanent`);
+  },
+  
+  // Restore blood request from trash (admin)
+  restore: async (id, admin_notes = '') => {
+    return apiClient.put(`/blood-requests/${id}/restore`, { admin_notes });
+  },
+  
+  // Mark blood request as spam (admin)
+  markAsSpam: async (id, admin_notes = '') => {
+    return apiClient.put(`/blood-requests/${id}/spam`, { admin_notes });
+  },
+  
+  // Mark blood request as completed (admin)
+  markAsCompleted: async (id, admin_notes = '') => {
+    return apiClient.put(`/blood-requests/${id}/complete`, { admin_notes });
+  },
+  
+  // Update blood request status (admin)
+  updateStatus: async (id, status, admin_notes = '') => {
+    return apiClient.put(`/blood-requests/${id}/status`, { status, admin_notes });
+  },
+  
+  // Revert blood request (admin) - reset to pending and remove spam/completed flags
+  revert: async (id, admin_notes = '') => {
+    return apiClient.put(`/blood-requests/${id}/revert`, { admin_notes });
+  },
+};
+
+// API Configuration and Utilities (moved below bloodRequestAPI)
+// const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1'; // Already defined above
+
 class ApiClient {
   constructor() {
     this.baseURL = API_BASE_URL;
@@ -222,6 +298,11 @@ export const authAPI = {
   // Get all users (admin)
   getAllUsers: async () => {
     return apiClient.get('/auth/users');
+  },
+
+  // Get user by ID (admin)
+  getUserById: async (userId) => {
+    return apiClient.get(`/auth/users/${userId}`);
   },
 
   // Block a user (admin)

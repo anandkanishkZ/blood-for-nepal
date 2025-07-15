@@ -387,6 +387,28 @@ export const getAllUsers = async (req, res, next) => {
   }
 };
 
+// @desc    Get user by ID (admin only)
+// @route   GET /api/v1/auth/users/:id
+// @access  Private/Admin
+export const getUserById = async (req, res, next) => {
+  try {
+    const user = await User.findByPk(req.params.id, {
+      attributes: { exclude: ['password'] }
+    });
+    
+    if (!user) {
+      return next(new AppError('User not found', 404));
+    }
+    
+    res.status(200).json({
+      success: true,
+      data: { user }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // @desc    Block a user (admin only)
 // @route   PUT /api/v1/auth/users/:id/block
 // @access  Private/Admin
@@ -789,7 +811,7 @@ export const verifyEmailLink = async (req, res, next) => {
       setTokenCookie(res, loginToken);
       return res.status(200).json({
         success: true,
-        message: 'इमेल पहिले नै प्रमाणीकरण भयो! तपाईं अब लगइन हुनुभएको छ। (Email already verified! You are now logged in.)',
+        message: 'Email already verified! You are now logged in.',
         data: {
           user: {
             id: existingUser.id,
@@ -822,7 +844,7 @@ export const verifyEmailLink = async (req, res, next) => {
       console.log('❌ User not found or token expired/invalid');
       return res.status(400).json({
         success: false,
-        message: 'अवैध वा समाप्त भएको प्रमाणीकरण लिंक। (Invalid or expired verification link.)',
+        message: 'Invalid or expired verification link.',
         data: { alreadyVerified: false }
       });
     }
@@ -852,7 +874,7 @@ export const verifyEmailLink = async (req, res, next) => {
 
     res.status(200).json({
       success: true,
-      message: 'इमेल सफलतापूर्वक प्रमाणीकरण भयो! तपाईं अब लगइन हुनुभएको छ। (Email verified successfully! You are now logged in.)',
+      message: 'Email verified successfully! You are now logged in.',
       data: {
         user: {
           id: user.id,

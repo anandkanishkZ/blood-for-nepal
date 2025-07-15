@@ -3,7 +3,7 @@ import { useLocation, Link } from 'react-router-dom';
 import { authAPI } from '../../utils/api';
 import logoTransparent from '../../assets/logo-transparent.png';
 import AdminSidebar from '../AdminSidebar';
-import { Search, Shield, Ban, X as XIcon, Info, Unlock, LogIn, Eye, UserCheck, UserX } from 'lucide-react';
+import { Search, Shield, Ban, X as XIcon, Info, Unlock, LogIn, Eye, UserCheck, UserX, User } from 'lucide-react';
 import { showToast } from '../../utils/toast';
 
 // Utility function to construct full avatar URL
@@ -267,13 +267,22 @@ const AdminUsersPage = ({ isDarkMode, toggleDarkMode }) => {
                           <td className="px-6 py-4 whitespace-nowrap text-gray-500 dark:text-gray-400">{user.createdAt ? new Date(user.createdAt).toLocaleDateString() : '-'}</td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             {user.role === 'user' && (
-                              <button
-                                onClick={() => setActionsModal({ open: true, user })}
-                                className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-md hover:shadow-lg transition-all duration-200 transform hover:scale-105"
-                                title="View Actions"
-                              >
-                                <Eye className="w-4 h-4" />
-                              </button>
+                              <div className="flex items-center gap-2">
+                                <Link
+                                  to={`/admin/users/${user.id}`}
+                                  className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white shadow-md hover:shadow-lg transition-all duration-200 transform hover:scale-105"
+                                  title="View Profile"
+                                >
+                                  <User className="w-4 h-4" />
+                                </Link>
+                                <button
+                                  onClick={() => setActionsModal({ open: true, user })}
+                                  className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-md hover:shadow-lg transition-all duration-200 transform hover:scale-105"
+                                  title="View Actions"
+                                >
+                                  <Eye className="w-4 h-4" />
+                                </button>
+                              </div>
                             )}
                           </td>
                         </tr>
@@ -354,6 +363,21 @@ const AdminUsersPage = ({ isDarkMode, toggleDarkMode }) => {
                     </div>
 
                     <div className="space-y-3">
+                      {/* View Profile Action */}
+                      <Link
+                        to={`/admin/users/${actionsModal.user.id}`}
+                        onClick={() => setActionsModal({ open: false, user: null })}
+                        className="w-full flex items-center gap-4 p-4 rounded-xl bg-purple-50 dark:bg-purple-900/20 hover:bg-purple-100 dark:hover:bg-purple-900/30 border border-purple-200 dark:border-purple-800 transition-all duration-200 group"
+                      >
+                        <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/40 rounded-full flex items-center justify-center group-hover:bg-purple-200 dark:group-hover:bg-purple-900/60 transition-colors">
+                          <User className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                        </div>
+                        <div className="text-left">
+                          <p className="font-medium text-purple-700 dark:text-purple-300">View Profile</p>
+                          <p className="text-sm text-purple-600 dark:text-purple-400">See detailed user information</p>
+                        </div>
+                      </Link>
+
                       {/* Block/Unblock Action */}
                       {actionsModal.user.is_active !== false ? (
                         <button

@@ -26,6 +26,9 @@ import AdminDashboardPage from './private/pages/AdminDashboardPage.jsx';
 import AdminUsersPage from './private/pages/AdminUsersPage.jsx';
 import AdminSettingsPage from './private/pages/AdminSettingsPage.jsx';
 import DonorListPage from './private/pages/DonorListPage.jsx';
+import AdminBloodRequestsPage from './private/pages/AdminBloodRequestsPage.jsx';
+import AdminBloodRequestDetailPage from './private/pages/AdminBloodRequestDetailPage.jsx';
+import AdminUserProfilePage from './private/pages/AdminUserProfilePage.jsx';
 import 'react-toastify/dist/ReactToastify.css';
 import './App.css';
 
@@ -69,14 +72,17 @@ function App() {
                 <Route path="/dashboard" element={<PrivateRoute><DashboardPage /></PrivateRoute>} />
                 <Route path="/register-donor" element={<DonorRegistrationPage />} />
                 <Route path="/profile" element={<PrivateRoute><ViewProfilePage /></PrivateRoute>} />
-                <Route path="/request" element={<RequestBloodPage />} />
+                <Route path="/request" element={<PrivateRoute><RequestBloodPage /></PrivateRoute>} />
                 <Route path="/find" element={<div className="min-h-screen flex items-center justify-center"><h1 className="text-2xl font-bold text-gray-900 dark:text-white">Find Donors Page - Coming Soon</h1></div>} />
                 <Route path="/education" element={<EducationPage />} />
                 <Route path="/emergency" element={<EmergencyPage />} />
                 <Route path="/admin" element={<PrivateRoute requiredRole="admin"><AdminDashboardPage isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} /></PrivateRoute>} />
                 <Route path="/admin/users" element={<PrivateRoute requiredRole="admin"><AdminUsersPage isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} /></PrivateRoute>} />
+                <Route path="/admin/users/:id" element={<PrivateRoute requiredRole="admin"><AdminUserProfilePage isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} /></PrivateRoute>} />
                 <Route path="/admin/donors" element={<PrivateRoute requiredRole="admin"><DonorListPage isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} /></PrivateRoute>} />
                 <Route path="/admin/settings" element={<PrivateRoute requiredRole="admin"><AdminSettingsPage isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} /></PrivateRoute>} />
+                <Route path="/admin/blood-requests" element={<PrivateRoute requiredRole="admin"><AdminBloodRequestsPage isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} /></PrivateRoute>} />
+                <Route path="/admin/blood-requests/:id" element={<PrivateRoute requiredRole="admin"><AdminBloodRequestDetailPage isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} /></PrivateRoute>} />
                 <Route path="*" element={<Navigate to="/" />} />
             </Routes>
                 {!isAdminRoute && <Footer />}

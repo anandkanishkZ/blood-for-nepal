@@ -1,4 +1,13 @@
 import React, { useState, useEffect } from 'react';
+import { bloodRequestAPI } from '../../utils/api';
+
+// Utility to generate a unique request ID (e.g., BFN-YYYYMMDD-XXXX)
+function generateRequestId() {
+  const now = new Date();
+  const dateStr = now.toISOString().slice(0,10).replace(/-/g, '');
+  const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+  return `BFN-${dateStr}-${random}`;
+}
 import { useNavigate } from 'react-router-dom';
 import { AlertTriangle, Clock, MapPin, HeartPulse as Pulse, User, Phone, Heart, Building, CheckCircle, Upload } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
@@ -103,25 +112,48 @@ const RequestBloodPage = () => {
     window.scrollTo(0, 0);
   };
   
-  const handleSubmit = (e) => {
+  const [submittedRequestId, setSubmittedRequestId] = useState(null);
+  // Utility to convert camelCase keys to snake_case
+  function toSnakeCase(obj) {
+    const result = {};
+    for (const key in obj) {
+      if (typeof obj[key] === 'object' && obj[key] !== null && !Array.isArray(obj[key]) && key !== 'prescription' && key !== 'prescriptionPreview') {
+        // Recursively convert nested objects (e.g., location)
+        const nested = toSnakeCase(obj[key]);
+        for (const nestedKey in nested) {
+          result[nestedKey] = nested[nestedKey];
+        }
+      } else {
+        // Convert camelCase to snake_case
+        const snakeKey = key.replace(/([A-Z])/g, '_$1').toLowerCase();
+        result[snakeKey] = obj[key];
+      }
+    }
+    return result;
+  }
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      setIsSubmitting(false);
+    try {
+      const requestId = generateRequestId();
+      // Convert formData to snake_case before sending
+      const snakeCaseData = toSnakeCase({ ...formData, requestId });
+      await bloodRequestAPI.submitRequest(snakeCaseData);
+      setSubmittedRequestId(requestId);
       setIsSuccess(true);
-      
       // Clean up preview URL
       if (formData.prescriptionPreview) {
         URL.revokeObjectURL(formData.prescriptionPreview);
       }
-      
       // Redirect after a delay
       setTimeout(() => {
         navigate('/');
-      }, 3000);
-    }, 1500);
+      }, 5000);
+    } catch (error) {
+      alert(error?.message || 'Failed to submit blood request. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
   
   const bloodTypes = [
@@ -396,9 +428,11 @@ const RequestBloodPage = () => {
             <p className="mt-2 text-gray-600 dark:text-gray-400">
               {t('requestSent')}
             </p>
-            <p className="mt-1 text-gray-600 dark:text-gray-400">
-              {t('requestId')}: <span className="font-medium">BFN-{Math.floor(Math.random() * 10000).toString().padStart(4, '0')}</span>
-            </p>
+            {submittedRequestId && (
+              <p className="mt-1 text-gray-600 dark:text-gray-400">
+                {t('requestId')}: <span className="font-medium">{submittedRequestId}</span>
+              </p>
+            )}
             <p className="mt-4 text-sm text-gray-500 dark:text-gray-500">
               {t('redirectingHome')}
             </p>

@@ -8,6 +8,7 @@ import {
   updateProfile,
   changePassword,
   getAllUsers,
+  getUserById,
   blockUser,
   unblockUser,
   impersonateUser,
@@ -51,6 +52,7 @@ router.put('/change-password', requireVerification, validatePasswordChange, chan
 
 // Admin routes
 router.get('/users', authorize('admin'), getAllUsers);
+router.get('/users/:id', authorize('admin'), getUserById);
 router.put('/users/:id/block', authorize('admin'), blockUser);
 router.put('/users/:id/unblock', authorize('admin'), unblockUser);
 router.post('/users/:id/impersonate', authorize('admin'), impersonateUser);

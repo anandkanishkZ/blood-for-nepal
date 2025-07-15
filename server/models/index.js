@@ -19,13 +19,16 @@ if (dbConfig.use_env_variable) {
 
 // Import models
 import User from './User.js';
+import BloodRequest from './BloodRequest.js';
 
 // Initialize models
 User.init(sequelize);
+BloodRequest.init(sequelize);
 
 // Define associations
 const models = {
-  User
+  User,
+  BloodRequest
 };
 
 // Set up associations
