@@ -105,7 +105,7 @@ export const getBloodRequestById = async (req, res) => {
   }
 };
 
-// Soft delete a blood request (Admin only) - Move to trash
+// Delete a blood request (Admin only)
 export const deleteBloodRequest = async (req, res) => {
   try {
     const request = await BloodRequest.findByPk(req.params.id);
@@ -117,57 +117,17 @@ export const deleteBloodRequest = async (req, res) => {
       });
     }
     
-    // Soft delete - move to trash
-    await request.update({
-      status: 'cancelled',
-      admin_notes: 'Moved to trash',
-      updated_at: new Date()
-    });
-    
-    res.json({ 
-      success: true, 
-      message: 'Blood request moved to trash successfully'
-    });
-  } catch (error) {
-    console.error('Error moving blood request to trash:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: error.message || 'Failed to move blood request to trash'
-    });
-  }
-};
-
-// Permanently delete a blood request (Admin only) - Delete from trash
-export const permanentlyDeleteBloodRequest = async (req, res) => {
-  try {
-    const request = await BloodRequest.findByPk(req.params.id);
-    
-    if (!request) {
-      return res.status(404).json({ 
-        success: false, 
-        message: 'Blood request not found' 
-      });
-    }
-    
-    // Check if it's in trash (cancelled status)
-    if (request.status !== 'cancelled') {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Blood request must be in trash before permanent deletion' 
-      });
-    }
-    
     await request.destroy();
     
     res.json({ 
       success: true, 
-      message: 'Blood request permanently deleted successfully'
+      message: 'Blood request deleted successfully'
     });
   } catch (error) {
-    console.error('Error permanently deleting blood request:', error);
+    console.error('Error deleting blood request:', error);
     res.status(500).json({ 
       success: false, 
-      message: error.message || 'Failed to permanently delete blood request'
+      message: error.message || 'Failed to delete blood request'
     });
   }
 };
@@ -307,47 +267,6 @@ export const revertBloodRequest = async (req, res) => {
     res.status(500).json({ 
       success: false, 
       message: error.message || 'Failed to revert blood request'
-    });
-  }
-};
-
-// Restore blood request from trash (Admin only)
-export const restoreBloodRequest = async (req, res) => {
-  try {
-    const { admin_notes } = req.body;
-    
-    const request = await BloodRequest.findByPk(req.params.id);
-    
-    if (!request) {
-      return res.status(404).json({ 
-        success: false, 
-        message: 'Blood request not found' 
-      });
-    }
-    
-    // Check if it's in trash (cancelled status)
-    if (request.status !== 'cancelled') {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Blood request is not in trash' 
-      });
-    }
-    
-    await request.update({
-      status: 'pending',
-      admin_notes: admin_notes || 'Restored from trash',
-      updated_at: new Date()
-    });
-    
-    res.json({ 
-      success: true, 
-      message: 'Blood request restored from trash successfully'
-    });
-  } catch (error) {
-    console.error('Error restoring blood request from trash:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: error.message || 'Failed to restore blood request from trash'
     });
   }
 };

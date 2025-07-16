@@ -4,8 +4,6 @@ import {
   getAllBloodRequests, 
   getBloodRequestById, 
   deleteBloodRequest, 
-  permanentlyDeleteBloodRequest,
-  restoreBloodRequest,
   markAsSpam, 
   markAsCompleted, 
   updateStatus,
@@ -44,14 +42,8 @@ router.get('/', protect, authorize('admin'), getAllBloodRequests);
 // GET /api/blood-requests/:id - Admin only
 router.get('/:id', protect, authorize('admin'), getBloodRequestById);
 
-// DELETE /api/blood-requests/:id - Admin only (soft delete - move to trash)
+// DELETE /api/blood-requests/:id - Admin only
 router.delete('/:id', protect, authorize('admin'), deleteBloodRequest);
-
-// DELETE /api/blood-requests/:id/permanent - Admin only (permanent delete)
-router.delete('/:id/permanent', protect, authorize('admin'), permanentlyDeleteBloodRequest);
-
-// PUT /api/blood-requests/:id/restore - Admin only (restore from trash)
-router.put('/:id/restore', protect, authorize('admin'), restoreBloodRequest);
 
 // PUT /api/blood-requests/:id/spam - Admin only
 router.put('/:id/spam', protect, authorize('admin'), markAsSpam);
