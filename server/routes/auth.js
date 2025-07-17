@@ -17,7 +17,8 @@ import {
   resendVerification,
   switchVerificationMethod,
   getVerificationStatus,
-  verifyEmailLink
+  verifyEmailLink,
+  getDonors
 } from '../controllers/authController.js';
 import { protect, authorize, requireVerification } from '../middleware/auth.js';
 import {
@@ -33,6 +34,7 @@ const router = express.Router();
 // Public routes
 router.post('/register', validateRegister, register);
 router.post('/login', validateLogin, login);
+router.get('/donors', getDonors); // Public endpoint for finding donors
 
 // Verification routes (public)
 router.post('/verify', verifyUser);

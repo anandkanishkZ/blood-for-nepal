@@ -22,6 +22,12 @@ export const bloodRequestAPI = {
     // POST to /blood-requests (base URL already includes /api/v1)
     return apiClient.uploadFile('/blood-requests', formData);
   },
+  
+  // Get current user's blood requests
+  getMyRequests: async () => {
+    return apiClient.get('/blood-requests/my-requests');
+  },
+  
   // Fetch all blood requests (admin)
   getAll: async () => {
     return apiClient.get('/blood-requests');
@@ -38,19 +44,9 @@ export const bloodRequestAPI = {
     return `${API_BASE_URL.replace('/api/v1', '')}/${cleanUrl}`;
   },
   
-  // Delete blood request (admin) - Soft delete (move to trash)
+  // Delete blood request (admin)
   delete: async (id) => {
     return apiClient.delete(`/blood-requests/${id}`);
-  },
-  
-  // Permanently delete blood request (admin) - Hard delete from trash
-  permanentlyDelete: async (id) => {
-    return apiClient.delete(`/blood-requests/${id}/permanent`);
-  },
-  
-  // Restore blood request from trash (admin)
-  restore: async (id, admin_notes = '') => {
-    return apiClient.put(`/blood-requests/${id}/restore`, { admin_notes });
   },
   
   // Mark blood request as spam (admin)
@@ -71,6 +67,31 @@ export const bloodRequestAPI = {
   // Revert blood request (admin) - reset to pending and remove spam/completed flags
   revert: async (id, admin_notes = '') => {
     return apiClient.put(`/blood-requests/${id}/revert`, { admin_notes });
+  },
+  
+  // Send connection request to donor
+  sendConnectionRequest: async (donorId, bloodRequestId) => {
+    return apiClient.post('/blood-requests/connect', { donorId, bloodRequestId });
+  },
+  
+  // Get connection requests for current user (donor)
+  getConnectionRequests: async () => {
+    return apiClient.get('/blood-requests/connections');
+  },
+  
+  // Get connection requests sent by current user (requester)
+  getMySentConnectionRequests: async () => {
+    return apiClient.get('/blood-requests/my-sent-connections');
+  },
+  
+  // Respond to connection request
+  respondToConnection: async (connectionId, response, message = '') => {
+    return apiClient.put(`/blood-requests/connections/${connectionId}`, { response, message });
+  },
+  
+  // Revert connection request back to pending (Donor only)
+  revertConnectionRequest: async (connectionId) => {
+    return apiClient.put(`/blood-requests/connections/${connectionId}/revert`);
   },
 };
 
@@ -293,6 +314,11 @@ export const authAPI = {
   // Change password
   changePassword: async (passwordData) => {
     return apiClient.put('/auth/change-password', passwordData);
+  },
+
+  // Get all donors (public)
+  getDonors: async () => {
+    return apiClient.get('/auth/donors');
   },
 
   // Get all users (admin)

@@ -40,6 +40,7 @@ class BloodRequest extends Model {
 
   static associate(models) {
     this.belongsTo(models.User, { foreignKey: 'user_id', as: 'user' });
+    this.hasMany(models.ConnectionRequest, { foreignKey: 'blood_request_id', as: 'connections' });
   }
 }
 

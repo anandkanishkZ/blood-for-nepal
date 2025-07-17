@@ -369,6 +369,34 @@ export const changePassword = async (req, res, next) => {
   }
 };
 
+// @desc    Get all donors (public for find-donor page)
+// @route   GET /api/v1/auth/donors
+// @access  Public
+export const getDonors = async (req, res, next) => {
+  try {
+    const donors = await User.findAll({
+      where: {
+        is_donor: true,
+        is_active: true,
+        phone: { [Op.ne]: null },
+        blood_type: { [Op.ne]: null }
+      },
+      attributes: { 
+        exclude: ['password', 'email_verification_token', 'sms_verification_otp', 
+                 'reset_password_token', 'reset_password_expire', 'verification_expires'] 
+      },
+      order: [['createdAt', 'DESC']]
+    });
+    
+    res.status(200).json({
+      success: true,
+      data: { donors }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // @desc    Get all users (admin only)
 // @route   GET /api/v1/auth/users
 // @access  Private/Admin

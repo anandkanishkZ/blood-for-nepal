@@ -7,6 +7,7 @@ import Footer from './public/components/layout/Footer';
 import BackToTop from './public/components/common/BackToTop';
 import ScrollToTop from './public/components/common/ScrollToTop';
 import HomePage from './public/pages/HomePage';
+import FindDonorPage from './public/pages/FindDonorPage';
 import LoginPage from './public/pages/LoginPage';
 import RegisterPage from './public/pages/RegisterPage';
 import NewRegisterPage from './public/pages/NewRegisterPage';
@@ -29,6 +30,7 @@ import DonorListPage from './private/pages/DonorListPage.jsx';
 import AdminBloodRequestsPage from './private/pages/AdminBloodRequestsPage.jsx';
 import AdminBloodRequestDetailPage from './private/pages/AdminBloodRequestDetailPage.jsx';
 import AdminUserProfilePage from './private/pages/AdminUserProfilePage.jsx';
+import BloodRequestDetailPage from './public/pages/BloodRequestDetailPage.jsx';
 import 'react-toastify/dist/ReactToastify.css';
 import './App.css';
 
@@ -70,10 +72,12 @@ function App() {
                 <Route path="/email-verification-needed" element={<EmailVerificationNeededPage />} />
                 <Route path="/sms-verification-needed" element={<SmsVerificationNeededPage />} />
                 <Route path="/dashboard" element={<PrivateRoute><DashboardPage /></PrivateRoute>} />
+                <Route path="/blood-request/:id" element={<PrivateRoute><BloodRequestDetailPage /></PrivateRoute>} />
                 <Route path="/register-donor" element={<DonorRegistrationPage />} />
                 <Route path="/profile" element={<PrivateRoute><ViewProfilePage /></PrivateRoute>} />
                 <Route path="/request" element={<PrivateRoute><RequestBloodPage /></PrivateRoute>} />
                 <Route path="/find" element={<div className="min-h-screen flex items-center justify-center"><h1 className="text-2xl font-bold text-gray-900 dark:text-white">Find Donors Page - Coming Soon</h1></div>} />
+                <Route path="/find-donor" element={<FindDonorPage />} />
                 <Route path="/education" element={<EducationPage />} />
                 <Route path="/emergency" element={<EmergencyPage />} />
                 <Route path="/admin" element={<PrivateRoute requiredRole="admin"><AdminDashboardPage isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} /></PrivateRoute>} />

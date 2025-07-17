@@ -7,7 +7,13 @@ import {
   markAsSpam, 
   markAsCompleted, 
   updateStatus,
-  revertBloodRequest
+  revertBloodRequest,
+  getMyBloodRequests,
+  sendConnectionRequest,
+  getConnectionRequests,
+  getMySentConnectionRequests,
+  respondToConnectionRequest,
+  revertConnectionRequest
 } from '../controllers/bloodRequestController.js';
 import multer from 'multer';
 import path from 'path';
@@ -36,11 +42,29 @@ const upload = multer({ storage });
 // POST /api/blood-requests - Protected route (user must be logged in)
 router.post('/', protect, upload.single('prescription'), createBloodRequest);
 
+// GET /api/blood-requests/my-requests - Get current user's blood requests
+router.get('/my-requests', protect, getMyBloodRequests);
+
+// POST /api/blood-requests/connect - Send connection request to donor
+router.post('/connect', protect, sendConnectionRequest);
+
+// GET /api/blood-requests/connections - Get connection requests for current user
+router.get('/connections', protect, getConnectionRequests);
+
+// GET /api/blood-requests/my-sent-connections - Get connection requests sent by current user
+router.get('/my-sent-connections', protect, getMySentConnectionRequests);
+
+// PUT /api/blood-requests/connections/:id - Respond to connection request
+router.put('/connections/:id', protect, respondToConnectionRequest);
+
+// PUT /api/blood-requests/connections/:id/revert - Revert connection request to pending (Donor only)
+router.put('/connections/:id/revert', protect, revertConnectionRequest);
+
 // GET /api/blood-requests - Admin only
 router.get('/', protect, authorize('admin'), getAllBloodRequests);
 
-// GET /api/blood-requests/:id - Admin only
-router.get('/:id', protect, authorize('admin'), getBloodRequestById);
+// GET /api/blood-requests/:id - User can view their own, Admin can view all
+router.get('/:id', protect, getBloodRequestById);
 
 // DELETE /api/blood-requests/:id - Admin only
 router.delete('/:id', protect, authorize('admin'), deleteBloodRequest);
