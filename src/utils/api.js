@@ -1,6 +1,103 @@
 // API Configuration and Utilities
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
 
+// Blood Request API
+export const bloodRequestAPI = {
+  // Submit a new blood request (with file upload)
+  submitRequest: async (data) => {
+    const formData = new FormData();
+    // Add all fields to formData
+    for (const key in data) {
+      if (key === 'location' && typeof data[key] === 'object') {
+        // Flatten location fields
+        for (const locKey in data.location) {
+          formData.append(locKey, data.location[locKey] || '');
+        }
+      } else if (key === 'prescription' && data.prescription) {
+        formData.append('prescription', data.prescription);
+      } else if (key !== 'prescriptionPreview') {
+        formData.append(key, data[key]);
+      }
+    }
+    // POST to /blood-requests (base URL already includes /api/v1)
+    return apiClient.uploadFile('/blood-requests', formData);
+  },
+  
+  // Get current user's blood requests
+  getMyRequests: async () => {
+    return apiClient.get('/blood-requests/my-requests');
+  },
+  
+  // Fetch all blood requests (admin)
+  getAll: async () => {
+    return apiClient.get('/blood-requests');
+  },
+  // Fetch a single blood request by ID (admin)
+  getById: async (id) => {
+    return apiClient.get(`/blood-requests/${id}`);
+  },
+  // Get prescription image URL for direct access
+  getPrescriptionImageUrl: (prescriptionUrl) => {
+    if (!prescriptionUrl) return null;
+    // Remove leading slash if present and construct full URL
+    const cleanUrl = prescriptionUrl.startsWith('/') ? prescriptionUrl.slice(1) : prescriptionUrl;
+    return `${API_BASE_URL.replace('/api/v1', '')}/${cleanUrl}`;
+  },
+  
+  // Delete blood request (admin)
+  delete: async (id) => {
+    return apiClient.delete(`/blood-requests/${id}`);
+  },
+  
+  // Mark blood request as spam (admin)
+  markAsSpam: async (id, admin_notes = '') => {
+    return apiClient.put(`/blood-requests/${id}/spam`, { admin_notes });
+  },
+  
+  // Mark blood request as completed (admin)
+  markAsCompleted: async (id, admin_notes = '') => {
+    return apiClient.put(`/blood-requests/${id}/complete`, { admin_notes });
+  },
+  
+  // Update blood request status (admin)
+  updateStatus: async (id, status, admin_notes = '') => {
+    return apiClient.put(`/blood-requests/${id}/status`, { status, admin_notes });
+  },
+  
+  // Revert blood request (admin) - reset to pending and remove spam/completed flags
+  revert: async (id, admin_notes = '') => {
+    return apiClient.put(`/blood-requests/${id}/revert`, { admin_notes });
+  },
+  
+  // Send connection request to donor
+  sendConnectionRequest: async (donorId, bloodRequestId) => {
+    return apiClient.post('/blood-requests/connect', { donorId, bloodRequestId });
+  },
+  
+  // Get connection requests for current user (donor)
+  getConnectionRequests: async () => {
+    return apiClient.get('/blood-requests/connections');
+  },
+  
+  // Get connection requests sent by current user (requester)
+  getMySentConnectionRequests: async () => {
+    return apiClient.get('/blood-requests/my-sent-connections');
+  },
+  
+  // Respond to connection request
+  respondToConnection: async (connectionId, response, message = '') => {
+    return apiClient.put(`/blood-requests/connections/${connectionId}`, { response, message });
+  },
+  
+  // Revert connection request back to pending (Donor only)
+  revertConnectionRequest: async (connectionId) => {
+    return apiClient.put(`/blood-requests/connections/${connectionId}/revert`);
+  },
+};
+
+// API Configuration and Utilities (moved below bloodRequestAPI)
+// const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1'; // Already defined above
+
 class ApiClient {
   constructor() {
     this.baseURL = API_BASE_URL;
@@ -61,7 +158,15 @@ class ApiClient {
 
       if (!response.ok) {
         // Handle API errors
-        const errorMessage = data?.message || data || `HTTP error! status: ${response.status}`;
+        let errorMessage;
+        
+        if (data && typeof data === 'object') {
+          // Try to extract error message from different response structures
+          errorMessage = data.message || data.error?.message || data.error || JSON.stringify(data);
+        } else {
+          errorMessage = data || `HTTP error! status: ${response.status}`;
+        }
+        
         const error = new Error(errorMessage);
         error.status = response.status;
         error.data = data;
@@ -211,9 +316,19 @@ export const authAPI = {
     return apiClient.put('/auth/change-password', passwordData);
   },
 
+  // Get all donors (public)
+  getDonors: async () => {
+    return apiClient.get('/auth/donors');
+  },
+
   // Get all users (admin)
   getAllUsers: async () => {
     return apiClient.get('/auth/users');
+  },
+
+  // Get user by ID (admin)
+  getUserById: async (userId) => {
+    return apiClient.get(`/auth/users/${userId}`);
   },
 
   // Block a user (admin)
@@ -235,6 +350,35 @@ export const authAPI = {
   getAdminStats: async () => {
     return apiClient.get('/auth/admin/stats');
   },
+
+  // Verification endpoints
+  verifyUser: async (verificationData) => {
+    const response = await apiClient.post('/auth/verify', verificationData);
+    if (response.data?.token) {
+      apiClient.setToken(response.data.token);
+    }
+    return response;
+  },
+
+  resendVerification: async (userId) => {
+    return apiClient.post('/auth/resend-verification', { userId });
+  },
+
+  switchVerificationMethod: async (userId, newMethod) => {
+    return apiClient.post('/auth/switch-verification', { userId, newMethod });
+  },
+
+  getVerificationStatus: async (userId) => {
+    return apiClient.get(`/auth/verification-status/${userId}`);
+  },
+
+  verifyEmailLink: async (token, email) => {
+    const response = await apiClient.get(`/auth/verify-email?token=${token}&email=${encodeURIComponent(email)}`);
+    if (response.data?.token) {
+      apiClient.setToken(response.data.token);
+    }
+    return response;
+  },
 };
 
 // Health check
@@ -248,13 +392,41 @@ export const healthAPI = {
 export const handleApiError = (error) => {
   if (error.status === 401) {
     // Token expired or invalid
-    apiClient.setToken(null);
-    window.location.href = '/login';
-    return 'Session expired. Please login again.';
+    if (
+      error.message &&
+      (error.message.toLowerCase().includes('token') ||
+       error.message.toLowerCase().includes('session'))
+    ) {
+      apiClient.setToken(null);
+      window.location.href = '/login';
+      return 'Session expired. Please login again.';
+    }
+    // Otherwise, show the real backend message
+    return error.data?.message || error.message || 'Unauthorized. Please try again.';
   } else if (error.status === 403) {
     return 'Access denied. You do not have permission to perform this action.';
   } else if (error.status === 404) {
-    return 'Resource not found.';
+    // Handle user not found during login
+    const message = error.data?.message || error.message || 'Resource not found.';
+    if (message.includes('No account found')) {
+      return {
+        message: message,
+        action: 'register',
+        actionText: 'Create Account'
+      };
+    }
+    return message;
+  } else if (error.status === 409) {
+    // Handle duplicate account during registration
+    const message = error.data?.message || error.message || 'Conflict occurred.';
+    if (message.includes('account with this email already exists')) {
+      return {
+        message: message,
+        action: 'login',
+        actionText: 'Login Instead'
+      };
+    }
+    return message;
   } else if (error.status === 422 || error.status === 400) {
     // Validation errors or duplicate data
     if (error.data?.validationErrors) {
@@ -265,7 +437,11 @@ export const handleApiError = (error) => {
     // Handle specific duplicate email error
     const message = error.data?.message || error.message || 'Validation failed.';
     if (message.includes('already exists')) {
-      return 'This email is already registered. Please use a different email or try logging in.';
+      return {
+        message: message,
+        action: 'login',
+        actionText: 'Login Instead'
+      };
     }
     return message;
   } else if (error.status >= 500) {

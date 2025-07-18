@@ -1,6 +1,8 @@
 import express from 'express';
 import authRoutes from './auth.js';
 import uploadRoutes from './uploadRoutes.js';
+import adminRoutes from './admin/index.js';
+import bloodRequestRoutes from './bloodRequest.js';
 
 const router = express.Router();
 
@@ -16,6 +18,8 @@ router.get('/health', (req, res) => {
 
 // Mount routes
 router.use('/auth', authRoutes);
+router.use('/blood-requests', bloodRequestRoutes);
 router.use('/', uploadRoutes);
+router.use('/admin', adminRoutes);
 
 export default router;

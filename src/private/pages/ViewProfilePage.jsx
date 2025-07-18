@@ -259,16 +259,6 @@ const ViewProfilePage = () => {
   const validatePersonalSection = () => {
     const errors = {};
     
-    console.log('Validating personal section with data:', {
-      full_name: form.full_name,
-      phone: form.phone,
-      gender: form.gender,
-      date_of_birth: form.date_of_birth,
-      province: form.province,
-      district: form.district,
-      municipality: form.municipality,
-      address: form.address
-    });
     
     if (!form.full_name.trim()) {
       errors.full_name = "Full name is required";
@@ -307,19 +297,12 @@ const ViewProfilePage = () => {
     }
     
     setFormErrors(errors);
-    console.log('Personal section validation errors:', errors);
     return Object.keys(errors).length === 0;
   };
 
   const validateMedicalSection = () => {
     const errors = {};
     
-    console.log('Validating medical section with data:', {
-      blood_type: form.blood_type,
-      emergency_contact: form.emergency_contact,
-      medical_conditions: form.medical_conditions,
-      approximate_weight: form.approximate_weight
-    });
     
     if (!form.blood_type) {
       errors.blood_type = "Blood type is required";
@@ -340,22 +323,17 @@ const ViewProfilePage = () => {
     }
     
     setFormErrors(errors);
-    console.log('Medical section validation errors:', errors);
     return Object.keys(errors).length === 0;
   };
 
   const validateDonorSection = () => {
     const errors = {};
     
-    console.log('Validating donor section with data:', {
-      is_donor: form.is_donor
-    });
     
     // No required fields for donor section currently
     // is_donor is a boolean checkbox, no validation needed
     
     setFormErrors(errors);
-    console.log('Donor section validation errors:', errors);
     return Object.keys(errors).length === 0;
   };
 
@@ -363,8 +341,6 @@ const ViewProfilePage = () => {
   const validateForm = () => {
     const errors = {};
     
-    // Debug log to see current form state
-    console.log('Validating full form with data:', form);
     
     if (!form.full_name.trim()) {
       errors.full_name = "Full name is required";
@@ -421,7 +397,6 @@ const ViewProfilePage = () => {
     }
     
     setFormErrors(errors);
-    console.log('Full form validation errors:', errors);
     return Object.keys(errors).length === 0;
   };
 

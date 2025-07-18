@@ -102,3 +102,42 @@ export const optionalAuth = async (req, res, next) => {
     next(error);
   }
 };
+
+// Require verification - check if user has completed verification
+export const requireVerification = async (req, res, next) => {
+  try {
+    if (!req.user) {
+      return next(new AppError('Authentication required', 401));
+    }
+
+    // Check if user is verified (either email or phone)
+    if (!req.user.is_email_verified && !req.user.is_phone_verified) {
+      return next(new AppError(
+        'कृपया पहिले आफ्नो खाता प्रमाणीकरण गर्नुहोस्। (Please verify your account first.)', 
+        403
+      ));
+    }
+
+    next();
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Allow access only to unverified users (for verification endpoints)
+export const requireUnverified = async (req, res, next) => {
+  try {
+    if (!req.user) {
+      return next(new AppError('Authentication required', 401));
+    }
+
+    // Check if user is already verified
+    if (req.user.is_email_verified || req.user.is_phone_verified) {
+      return next(new AppError('Account is already verified', 400));
+    }
+
+    next();
+  } catch (error) {
+    next(error);
+  }
+};

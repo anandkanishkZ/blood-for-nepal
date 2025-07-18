@@ -47,6 +47,13 @@ const handleJWTExpiredError = () => {
 
 // Send error response for development
 const sendErrorDev = (err, res) => {
+  console.log('Development Error Details:', {
+    message: err.message,
+    status: err.statusCode,
+    stack: err.stack,
+    validationErrors: err.validationErrors
+  });
+  
   res.status(err.statusCode).json({
     success: false,
     error: {

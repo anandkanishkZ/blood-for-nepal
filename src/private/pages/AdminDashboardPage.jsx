@@ -4,7 +4,7 @@ import StatsCard from '../../public/components/common/StatsCard';
 import logoTransparent from '../../assets/logo-transparent.png';
 import AdminSidebar from '../AdminSidebar';
 import { authAPI } from '../../utils/api';
-import { Users, Droplet, Clock, ArrowRight } from 'lucide-react';
+import { Users, Droplet, Clock, ArrowRight, Settings, Smartphone } from 'lucide-react';
 
 const AdminDashboardPage = ({ isDarkMode, toggleDarkMode }) => {
   const [stats, setStats] = useState({
@@ -73,14 +73,36 @@ const AdminDashboardPage = ({ isDarkMode, toggleDarkMode }) => {
             />
           ))}
         </div>
-        <div className="flex flex-col sm:flex-row gap-4">
-          <Link to="/admin/users" className="flex-1 bg-white dark:bg-gray-800 shadow-lg rounded-xl p-6 flex items-center justify-between hover:bg-blue-50 dark:hover:bg-blue-900 transition group border border-gray-200 dark:border-gray-700">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <Link to="/admin/users" className="bg-white dark:bg-gray-800 shadow-lg rounded-xl p-6 flex items-center justify-between hover:bg-blue-50 dark:hover:bg-blue-900 transition group border border-gray-200 dark:border-gray-700">
             <div>
               <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-1">Users</h2>
               <p className="text-gray-600 dark:text-gray-400">View and manage all registered users</p>
             </div>
             <div className="flex items-center gap-2 text-blue-500">
               <Users className="w-8 h-8 group-hover:scale-110 transition-transform" />
+              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+            </div>
+          </Link>
+          
+          <Link to="/admin/settings" className="bg-white dark:bg-gray-800 shadow-lg rounded-xl p-6 flex items-center justify-between hover:bg-green-50 dark:hover:bg-green-900 transition group border border-gray-200 dark:border-gray-700">
+            <div>
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-1">Settings</h2>
+              <p className="text-gray-600 dark:text-gray-400">Manage system configuration and SMS providers</p>
+            </div>
+            <div className="flex items-center gap-2 text-green-500">
+              <Settings className="w-8 h-8 group-hover:scale-110 transition-transform" />
+              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+            </div>
+          </Link>
+          
+          <Link to="/admin/settings?tab=sms" className="bg-white dark:bg-gray-800 shadow-lg rounded-xl p-6 flex items-center justify-between hover:bg-purple-50 dark:hover:bg-purple-900 transition group border border-gray-200 dark:border-gray-700">
+            <div>
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-1">SMS Management</h2>
+              <p className="text-gray-600 dark:text-gray-400">Monitor and configure SMS providers</p>
+            </div>
+            <div className="flex items-center gap-2 text-purple-500">
+              <Smartphone className="w-8 h-8 group-hover:scale-110 transition-transform" />
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </div>
           </Link>

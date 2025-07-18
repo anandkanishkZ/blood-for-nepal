@@ -11,7 +11,7 @@ const config = {
     host: process.env.DB_HOST || 'localhost',
     port: process.env.DB_PORT || 5432,
     dialect: process.env.DB_DIALECT || 'postgres',
-    logging: console.log,
+    logging: process.env.NODE_ENV === 'development' ? console.log : false,
     define: {
       timestamps: true,
       underscored: true,
