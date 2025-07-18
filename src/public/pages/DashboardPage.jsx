@@ -4,6 +4,8 @@ import { Heart, Users, Calendar, Award, Bell, Settings, Clock, User, Phone, MapP
 import { useAuth } from '../context/AuthContext';
 import { bloodRequestAPI } from '../../utils/api';
 import DonorResponseModal from '../components/DonorResponseModal';
+import DonationStatusModal from '../components/DonationStatusModal';
+import DonationConfirmationModal from '../components/DonationConfirmationModal';
 
 const DashboardPage = () => {
   const { user } = useAuth();
@@ -18,6 +20,15 @@ const DashboardPage = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [modalAction, setModalAction] = useState('');
   const [selectedRequest, setSelectedRequest] = useState(null);
+
+  // Modal state for donation status
+  const [donationModalOpen, setDonationModalOpen] = useState(false);
+  const [selectedConnectionForDonation, setSelectedConnectionForDonation] = useState(null);
+
+  // Modal state for donation confirmation
+  const [showDonationConfirmationModal, setShowDonationConfirmationModal] = useState(false);
+  const [selectedConnection, setSelectedConnection] = useState(null);
+  const [confirmationStatus, setConfirmationStatus] = useState(null);
 
   // Fetch connection requests for donors and user's own blood requests
   useEffect(() => {
@@ -58,6 +69,30 @@ const DashboardPage = () => {
     fetchData();
   }, [user]);
 
+  // Helper function to refresh all data
+  const fetchConnectionRequests = async () => {
+    if (!user) return;
+
+    try {
+      // Fetch connection requests if user is a donor
+      if (user.is_donor) {
+        const connectionResponse = await bloodRequestAPI.getConnectionRequests();
+        setConnectionRequests(connectionResponse.connectionRequests || []);
+      }
+
+      // Fetch user's own blood requests
+      const myRequestsResponse = await bloodRequestAPI.getMyRequests();
+      setMyBloodRequests(myRequestsResponse.bloodRequests || []);
+
+      // Fetch connection requests sent by the user
+      const mySentConnectionsResponse = await bloodRequestAPI.getMySentConnectionRequests();
+      setMySentConnections(mySentConnectionsResponse.connectionRequests || []);
+      
+    } catch (err) {
+      console.error('Error fetching connection requests:', err);
+    }
+  };
+
   // Helper function to get sent connections for a specific blood request
   const getSentConnectionsForRequest = (bloodRequestId) => {
     return mySentConnections.filter(conn => conn.blood_request_id === bloodRequestId);
@@ -96,6 +131,35 @@ const DashboardPage = () => {
     setModalOpen(false);
     setModalAction('');
     setSelectedRequest(null);
+  };
+
+  const openDonationModal = (request) => {
+    setSelectedConnectionForDonation(request);
+    setDonationModalOpen(true);
+  };
+
+  const closeDonationModal = () => {
+    setDonationModalOpen(false);
+    setSelectedConnectionForDonation(null);
+  };
+
+  const handleDonationStatusUpdate = () => {
+    // Refresh the connection requests to show updated status
+    fetchConnectionRequests();
+  };
+
+  // Handle donation confirmation
+  const handleConfirmDonation = (connection, confirmed) => {
+    setSelectedConnection(connection);
+    setConfirmationStatus(confirmed);
+    setShowDonationConfirmationModal(true);
+  };
+
+  // Handle closing donation confirmation modal
+  const handleCloseDonationConfirmationModal = () => {
+    setShowDonationConfirmationModal(false);
+    setSelectedConnection(null);
+    setConfirmationStatus(null);
   };
 
   const handleModalConfirm = async (action, message) => {
@@ -432,7 +496,7 @@ const DashboardPage = () => {
                       )}
                       
                       {/* Revert Button for Accepted/Rejected Requests */}
-                      {request.status !== 'pending' && (
+                      {request.status !== 'pending' && !request.donation_status && (
                         <button
                           onClick={() => handleRevertConnection(request.id)}
                           className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors font-medium flex items-center justify-center gap-2"
@@ -440,6 +504,44 @@ const DashboardPage = () => {
                         >
                           <Clock className="w-4 h-4" />
                           Revert to Pending
+                        </button>
+                      )}
+                      
+                      {/* Revert Disabled Message for Donation Status Set */}
+                      {request.status !== 'pending' && request.donation_status && (
+                        <div className="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg border border-gray-300 font-medium flex items-center justify-center gap-2">
+                          <Clock className="w-4 h-4" />
+                          <span>Cannot revert - Donation status set</span>
+                        </div>
+                      )}
+                      
+                      {/* Donation Status Button for Accepted Requests */}
+                      {request.status === 'accepted' && (
+                        <button
+                          onClick={() => openDonationModal(request)}
+                          className={`px-4 py-2 rounded-lg transition-colors font-medium flex items-center justify-center gap-2 ${
+                            request.donation_status === 'completed'
+                              ? 'bg-green-100 text-green-800 border border-green-300 cursor-default'
+                              : request.donation_status === 'failed'
+                              ? 'bg-red-100 text-red-800 border border-red-300 cursor-default'
+                              : 'bg-blue-600 text-white hover:bg-blue-700'
+                          }`}
+                          disabled={request.donation_status}
+                          title={
+                            request.donation_status === 'completed'
+                              ? 'Donation marked as completed'
+                              : request.donation_status === 'failed'
+                              ? 'Donation marked as failed'
+                              : 'Update donation status'
+                          }
+                        >
+                          <Droplets className="w-4 h-4" />
+                          {request.donation_status === 'completed'
+                            ? 'Donation Completed'
+                            : request.donation_status === 'failed'
+                            ? 'Donation Failed'
+                            : 'Update Donation Status'
+                          }
                         </button>
                       )}
                       
@@ -689,6 +791,104 @@ const DashboardPage = () => {
                                     </div>
                                   </div>
                                 )}
+
+                                {/* Donation Status Information for Requester */}
+                                {connection.status === 'accepted' && (
+                                  <div className="mt-3 p-3 bg-purple-50 rounded-lg border border-purple-200 max-h-96 overflow-y-auto">
+                                    <h5 className="font-medium text-purple-800 mb-2 flex items-center sticky top-0 bg-purple-50 pb-2">
+                                      <Droplets className="w-4 h-4 mr-2" />
+                                      Donation Status
+                                    </h5>
+                                    <div className="space-y-3">
+                                      {connection.donation_status === 'completed' && (
+                                        <div className="space-y-2">
+                                          <div className="flex items-center text-green-600">
+                                            <Heart className="w-4 h-4 mr-2" />
+                                            <span className="font-medium">Donation Completed Successfully!</span>
+                                          </div>
+                                          <div className="text-sm text-gray-600">
+                                            Completed: {formatDate(connection.donation_completed_at)}
+                                          </div>
+                                          {connection.donation_notes && (
+                                            <div className="text-sm text-gray-700 bg-white p-2 rounded border">
+                                              <strong>Donor's Notes:</strong> {connection.donation_notes}
+                                            </div>
+                                          )}
+                                          {connection.requester_confirmed === null && (
+                                            <div className="bg-blue-50 p-3 rounded border border-blue-200">
+                                              <p className="text-sm text-blue-700 mb-2">
+                                                Please confirm if you received the blood donation
+                                              </p>
+                                              <div className="flex gap-2">
+                                                <button
+                                                  onClick={() => handleConfirmDonation(connection, true)}
+                                                  className="px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700 transition-colors flex items-center gap-1"
+                                                >
+                                                  <Heart className="w-3 h-3" />
+                                                  Confirm Receipt
+                                                </button>
+                                                <button
+                                                  onClick={() => handleConfirmDonation(connection, false)}
+                                                  className="px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700 transition-colors flex items-center gap-1"
+                                                >
+                                                  <AlertCircle className="w-3 h-3" />
+                                                  Report Issue
+                                                </button>
+                                              </div>
+                                            </div>
+                                          )}
+                                          {connection.requester_confirmed === true && (
+                                            <div className="flex items-center text-green-600 text-sm bg-green-50 p-2 rounded">
+                                              <Heart className="w-4 h-4 mr-2" />
+                                              <span className="font-medium">Receipt Confirmed - Thank You!</span>
+                                              {connection.requester_confirmation_at && (
+                                                <span className="text-gray-500 ml-2">
+                                                  on {formatDate(connection.requester_confirmation_at)}
+                                                </span>
+                                              )}
+                                            </div>
+                                          )}
+                                          {connection.requester_confirmed === false && (
+                                            <div className="flex items-center text-red-600 text-sm bg-red-50 p-2 rounded">
+                                              <AlertCircle className="w-4 h-4 mr-2" />
+                                              <span className="font-medium">Issue Reported</span>
+                                              {connection.requester_confirmation_notes && (
+                                                <div className="text-sm text-red-700 mt-1">
+                                                  Note: {connection.requester_confirmation_notes}
+                                                </div>
+                                              )}
+                                            </div>
+                                          )}
+                                        </div>
+                                      )}
+                                      {connection.donation_status === 'failed' && (
+                                        <div className="space-y-2">
+                                          <div className="flex items-center text-red-600">
+                                            <AlertCircle className="w-4 h-4 mr-2" />
+                                            <span className="font-medium">Donation Could Not Be Completed</span>
+                                          </div>
+                                          <div className="text-sm text-gray-600">
+                                            Reported: {formatDate(connection.donation_completed_at)}
+                                          </div>
+                                          {connection.donation_notes && (
+                                            <div className="text-sm text-gray-700 bg-white p-2 rounded border">
+                                              <strong>Reason:</strong> {connection.donation_notes}
+                                            </div>
+                                          )}
+                                          <div className="text-sm text-amber-700 bg-amber-50 p-2 rounded border border-amber-200">
+                                            💡 Consider finding additional donors for this request.
+                                          </div>
+                                        </div>
+                                      )}
+                                      {!connection.donation_status && (
+                                        <div className="flex items-center text-gray-500 text-sm">
+                                          <Clock className="w-4 h-4 mr-2" />
+                                          <span>Awaiting donation completion from donor...</span>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                )}
                               </div>
                             ))}
                           </div>
@@ -755,6 +955,23 @@ const DashboardPage = () => {
         onConfirm={handleModalConfirm}
         action={modalAction}
         request={selectedRequest}
+      />
+
+      {/* Donation Status Modal */}
+      <DonationStatusModal
+        isOpen={donationModalOpen}
+        onClose={closeDonationModal}
+        connectionRequest={selectedConnectionForDonation}
+        onStatusUpdate={handleDonationStatusUpdate}
+      />
+
+      {/* Donation Confirmation Modal */}
+      <DonationConfirmationModal
+        isOpen={showDonationConfirmationModal}
+        onClose={handleCloseDonationConfirmationModal}
+        connectionRequest={selectedConnection}
+        initialConfirmed={confirmationStatus}
+        onConfirmationUpdate={fetchConnectionRequests}
       />
     </div>
   );

@@ -24,12 +24,17 @@ class BloodRequest extends Model {
       additional_info: { type: DataTypes.TEXT, allowNull: true },
       prescription_url: { type: DataTypes.STRING, allowNull: true },
       agreed_to_terms: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false },
-      status: { type: DataTypes.STRING, allowNull: false, defaultValue: 'pending' }, // pending, completed, cancelled
+      status: { type: DataTypes.STRING, allowNull: false, defaultValue: 'pending' }, // pending, processing, completed, cancelled
       is_spam: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false },
       admin_notes: { type: DataTypes.TEXT, allowNull: true },
       completed_at: { type: DataTypes.DATE, allowNull: true },
       marked_spam_at: { type: DataTypes.DATE, allowNull: true },
       user_id: { type: DataTypes.UUID, allowNull: true },
+      // Soft delete fields
+      deleted_at: { type: DataTypes.DATE, allowNull: true },
+      permanently_deleted_at: { type: DataTypes.DATE, allowNull: true },
+      deleted_by: { type: DataTypes.UUID, allowNull: true },
+      deletion_reason: { type: DataTypes.TEXT, allowNull: true },
     }, {
       sequelize,
       modelName: 'BloodRequest',
@@ -40,7 +45,9 @@ class BloodRequest extends Model {
 
   static associate(models) {
     this.belongsTo(models.User, { foreignKey: 'user_id', as: 'user' });
+    this.belongsTo(models.User, { foreignKey: 'deleted_by', as: 'deleter' });
     this.hasMany(models.ConnectionRequest, { foreignKey: 'blood_request_id', as: 'connections' });
+    this.hasMany(models.ActivityLog, { foreignKey: 'blood_request_id', as: 'activityLogs' });
   }
 }
 

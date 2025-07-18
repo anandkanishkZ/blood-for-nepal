@@ -4,6 +4,8 @@ import {
   getAllBloodRequests, 
   getBloodRequestById, 
   deleteBloodRequest, 
+  restoreBloodRequest,
+  permanentlyDeleteBloodRequest,
   markAsSpam, 
   markAsCompleted, 
   updateStatus,
@@ -13,7 +15,11 @@ import {
   getConnectionRequests,
   getMySentConnectionRequests,
   respondToConnectionRequest,
-  revertConnectionRequest
+  revertConnectionRequest,
+  getBloodRequestActivityLogs,
+  addAdminNote,
+  markDonationCompleted,
+  confirmDonationReceipt
 } from '../controllers/bloodRequestController.js';
 import multer from 'multer';
 import path from 'path';
@@ -66,8 +72,14 @@ router.get('/', protect, authorize('admin'), getAllBloodRequests);
 // GET /api/blood-requests/:id - User can view their own, Admin can view all
 router.get('/:id', protect, getBloodRequestById);
 
-// DELETE /api/blood-requests/:id - Admin only
+// DELETE /api/blood-requests/:id - Soft delete (move to trash) - Admin only
 router.delete('/:id', protect, authorize('admin'), deleteBloodRequest);
+
+// PUT /api/blood-requests/:id/restore - Restore from trash - Admin only
+router.put('/:id/restore', protect, authorize('admin'), restoreBloodRequest);
+
+// DELETE /api/blood-requests/:id/permanent - Permanently delete - Admin only
+router.delete('/:id/permanent', protect, authorize('admin'), permanentlyDeleteBloodRequest);
 
 // PUT /api/blood-requests/:id/spam - Admin only
 router.put('/:id/spam', protect, authorize('admin'), markAsSpam);
@@ -80,6 +92,18 @@ router.put('/:id/status', protect, authorize('admin'), updateStatus);
 
 // PUT /api/blood-requests/:id/revert - Admin only
 router.put('/:id/revert', protect, authorize('admin'), revertBloodRequest);
+
+// GET /api/blood-requests/:id/activity-logs - Get activity logs for blood request (Admin only)
+router.get('/:id/activity-logs', protect, authorize('admin'), getBloodRequestActivityLogs);
+
+// POST /api/blood-requests/:id/admin-note - Add admin note (Admin only)
+router.post('/:id/admin-note', protect, authorize('admin'), addAdminNote);
+
+// PUT /api/blood-requests/connections/:id/donation - Mark donation as completed (Donor only)
+router.put('/connections/:id/donation', protect, markDonationCompleted);
+
+// PUT /api/blood-requests/connections/:id/confirm - Confirm donation receipt (Requester only)
+router.put('/connections/:id/confirm', protect, confirmDonationReceipt);
 
 // GET /api/blood-requests/:id/prescription (secure prescription image)
 router.get('/:id/prescription', protect, authorize('admin'), async (req, res) => {

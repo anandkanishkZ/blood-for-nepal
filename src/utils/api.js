@@ -29,8 +29,8 @@ export const bloodRequestAPI = {
   },
   
   // Fetch all blood requests (admin)
-  getAll: async () => {
-    return apiClient.get('/blood-requests');
+  getAll: async (view = 'active') => {
+    return apiClient.get(`/blood-requests?view=${view}`);
   },
   // Fetch a single blood request by ID (admin)
   getById: async (id) => {
@@ -44,9 +44,19 @@ export const bloodRequestAPI = {
     return `${API_BASE_URL.replace('/api/v1', '')}/${cleanUrl}`;
   },
   
-  // Delete blood request (admin)
-  delete: async (id) => {
-    return apiClient.delete(`/blood-requests/${id}`);
+  // Delete blood request (admin) - Soft delete (move to trash)
+  delete: async (id, deletion_reason = '') => {
+    return apiClient.delete(`/blood-requests/${id}`, { data: { deletion_reason } });
+  },
+
+  // Restore blood request from trash (admin)
+  restore: async (id) => {
+    return apiClient.put(`/blood-requests/${id}/restore`);
+  },
+
+  // Permanently delete blood request (admin)
+  permanentDelete: async (id) => {
+    return apiClient.delete(`/blood-requests/${id}/permanent`);
   },
   
   // Mark blood request as spam (admin)
@@ -93,6 +103,26 @@ export const bloodRequestAPI = {
   revertConnectionRequest: async (connectionId) => {
     return apiClient.put(`/blood-requests/connections/${connectionId}/revert`);
   },
+
+  // Get activity logs for a blood request (Admin only)
+  getActivityLogs: async (bloodRequestId) => {
+    return apiClient.get(`/blood-requests/${bloodRequestId}/activity-logs`);
+  },
+
+  // Add admin note to blood request (Admin only)
+  addAdminNote: async (bloodRequestId, note) => {
+    return apiClient.post(`/blood-requests/${bloodRequestId}/admin-note`, { note });
+  },
+
+  // Mark donation as completed (Donor only)
+  markDonationCompleted: async (connectionId, status, notes = '') => {
+    return apiClient.put(`/blood-requests/connections/${connectionId}/donation`, { status, notes });
+  },
+
+  // Confirm donation receipt (Requester only)
+  confirmDonationReceipt: async (connectionId, confirmed, notes = '') => {
+    return apiClient.put(`/blood-requests/connections/${connectionId}/confirm`, { confirmed, notes });
+  }
 };
 
 // API Configuration and Utilities (moved below bloodRequestAPI)

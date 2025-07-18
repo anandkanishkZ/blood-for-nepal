@@ -9,8 +9,7 @@
     "dev": "nodemon server.js",
     "db:migrate": "npx sequelize-cli db:migrate",
     "db:seed": "npx sequelize-cli db:seed:all",
-    "db:reset": "npx sequelize-cli db:migrate:undo:all && npm run db:migrate && npm run db:seed",
-    "test:sms": "node scripts/testSms.js"
+    "db:reset": "npx sequelize-cli db:migrate:undo:all && npm run db:migrate && npm run db:seed"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

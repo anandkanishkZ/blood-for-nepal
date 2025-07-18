@@ -44,6 +44,32 @@ class ConnectionRequest extends Model {
         type: DataTypes.TEXT,
         allowNull: true
       },
+      donation_status: {
+        type: DataTypes.ENUM('not_started', 'completed', 'failed'),
+        allowNull: true,
+        defaultValue: null
+      },
+      donation_completed_at: {
+        type: DataTypes.DATE,
+        allowNull: true
+      },
+      donation_notes: {
+        type: DataTypes.TEXT,
+        allowNull: true
+      },
+      requester_confirmed: {
+        type: DataTypes.BOOLEAN,
+        allowNull: true,
+        defaultValue: null
+      },
+      requester_confirmation_at: {
+        type: DataTypes.DATE,
+        allowNull: true
+      },
+      requester_confirmation_notes: {
+        type: DataTypes.TEXT,
+        allowNull: true
+      },
       created_at: {
         type: DataTypes.DATE,
         defaultValue: DataTypes.NOW

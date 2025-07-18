@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { Search, Droplets, Phone, MapPin, Heart, AlertCircle, UserCheck, Users, Send, Clock, Info } from 'lucide-react';
+import { Search, Droplets, Phone, MapPin, Heart, AlertCircle, UserCheck, Users, Send, Clock, Info, CheckCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { toast } from 'react-toastify';
 import { authAPI, bloodRequestAPI } from '../../utils/api';
 import { useAuth } from '../context/AuthContext';
 import { canReceiveFromDonor, getCompatibleDonorTypes, getCompatibleRecipientTypes } from '../../utils/bloodCompatibility';
@@ -203,7 +204,25 @@ const FindDonorPage = () => {
       setSelectedDonor(null);
       setSelectedBloodRequest('');
       setError(null);
-      alert('Connection request sent successfully! The donor will be notified.');
+      
+      // Show success toast notification
+      toast.success(
+        <div className="flex items-center gap-2">
+          <CheckCircle className="w-5 h-5 text-green-600" />
+          <div>
+            <div className="font-semibold">Connection Request Sent!</div>
+            <div className="text-sm">The donor will be notified and can respond to your request.</div>
+          </div>
+        </div>,
+        {
+          position: "top-center",
+          autoClose: 5000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+        }
+      );
     } catch (err) {
       setError('Failed to send connection request. Please try again.');
     } finally {
@@ -450,10 +469,9 @@ const FindDonorPage = () => {
                           {request.additional_info || `${request.purpose} - ${request.patient_name} (${request.urgency})`}
                         </p>
                         <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
-                          <span>📅 Created: {formatSafeDate(request.created_at)}</span>
-                          <span>⏰ Required: {formatSafeDate(request.required_date)}</span>
-                          <span>🏥 {request.hospital_name}</span>
-                          <span>📍 {request.municipality}, {request.district}</span>
+                          <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> Required: {formatSafeDate(request.required_date)}</span>
+                          <span className="flex items-center gap-1"><Heart className="w-3 h-3" /> {request.hospital_name}</span>
+                          <span className="flex items-center gap-1"><MapPin className="w-3 h-3" /> {request.municipality}, {request.district}</span>
                         </div>
                       </div>
                     ))}
