@@ -39,7 +39,8 @@ const DonationConfirmationModal = ({ isOpen, onClose, connectionRequest, onConfi
       );
       
       if (response.success) {
-        toast.success(`Donation receipt ${confirmed ? 'confirmed' : 'denied'} successfully`);
+        // Use the message from the backend which includes auto-completion info
+        toast.success(response.message || `Donation receipt ${confirmed ? 'confirmed' : 'denied'} successfully`);
         if (onConfirmationUpdate) {
           onConfirmationUpdate();
         }

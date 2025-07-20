@@ -226,6 +226,23 @@ class ActivityLogService {
       }
     );
   }
+
+  static async logCertificateGenerated(bloodRequestId, adminId, donorName, certificateFilename) {
+    return this.createLog(
+      bloodRequestId,
+      adminId,
+      'certificate_generated',
+      `Certificate generated for donor ${donorName}`,
+      {
+        metadata: { 
+          admin_id: adminId,
+          donor_name: donorName,
+          certificate_filename: certificateFilename,
+          generated_at: new Date().toISOString()
+        }
+      }
+    );
+  }
 }
 
 export default ActivityLogService;

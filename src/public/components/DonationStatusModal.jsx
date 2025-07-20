@@ -29,7 +29,8 @@ const DonationStatusModal = ({ isOpen, onClose, connectionRequest, onStatusUpdat
       );
       
       if (response.success) {
-        toast.success(`Donation marked as ${selectedStatus} successfully`);
+        // Use the message from the backend which includes auto-completion info
+        toast.success(response.message || `Donation marked as ${selectedStatus} successfully`);
         if (onStatusUpdate) {
           onStatusUpdate();
         }

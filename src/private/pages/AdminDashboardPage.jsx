@@ -4,7 +4,7 @@ import StatsCard from '../../public/components/common/StatsCard';
 import logoTransparent from '../../assets/logo-transparent.png';
 import AdminSidebar from '../AdminSidebar';
 import { authAPI } from '../../utils/api';
-import { Users, Droplet, Clock, ArrowRight, Settings, Smartphone } from 'lucide-react';
+import { Users, Droplet, Clock, ArrowRight, Settings, Smartphone, Heart } from 'lucide-react';
 
 const AdminDashboardPage = ({ isDarkMode, toggleDarkMode }) => {
   const [stats, setStats] = useState({
@@ -81,6 +81,17 @@ const AdminDashboardPage = ({ isDarkMode, toggleDarkMode }) => {
             </div>
             <div className="flex items-center gap-2 text-blue-500">
               <Users className="w-8 h-8 group-hover:scale-110 transition-transform" />
+              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+            </div>
+          </Link>
+          
+          <Link to="/admin/donations" className="bg-white dark:bg-gray-800 shadow-lg rounded-xl p-6 flex items-center justify-between hover:bg-red-50 dark:hover:bg-red-900 transition group border border-gray-200 dark:border-gray-700">
+            <div>
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-1">Successful Donations</h2>
+              <p className="text-gray-600 dark:text-gray-400">Track completed blood donations and donors</p>
+            </div>
+            <div className="flex items-center gap-2 text-red-500">
+              <Heart className="w-8 h-8 group-hover:scale-110 transition-transform" />
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </div>
           </Link>

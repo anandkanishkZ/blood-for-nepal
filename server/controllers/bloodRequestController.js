@@ -1,6 +1,7 @@
 import BloodRequest from '../models/BloodRequest.js';
-import models from '../models/index.js';
+import models, { sequelize } from '../models/index.js';
 import ActivityLogService from '../services/activityLogService.js';
+import CertificateService from '../services/certificateService.js';
 import { Op } from 'sequelize';
 
 // Create a new blood request
@@ -1018,6 +1019,45 @@ export const markDonationCompleted = async (req, res) => {
       attributes: ['id', 'full_name']
     });
 
+    // Check if donation is being marked as completed AND requester has already confirmed
+    // If both conditions are met, automatically mark the blood request as completed
+    if (status === 'completed' && connectionRequest.requester_confirmed === true) {
+      console.log(`🩸 AUTO-COMPLETION CHECK: Donor marked donation as completed and requester already confirmed for blood request ${connectionRequest.blood_request_id}`);
+      
+      const bloodRequest = connectionRequest.bloodRequest;
+      
+      // Only update if not already completed
+      if (bloodRequest.status !== 'completed') {
+        console.log(`🩸 AUTO-COMPLETING: Updating blood request ${connectionRequest.blood_request_id} status from "${bloodRequest.status}" to "completed"`);
+        
+        await bloodRequest.update({
+          status: 'completed',
+          completed_at: new Date()
+        });
+
+        // Log the automatic completion
+        await ActivityLogService.logStatusChanged(
+          connectionRequest.blood_request_id,
+          req.user.id,
+          bloodRequest.status,
+          'completed',
+          'Automatically completed when both donor and requester confirmed successful donation'
+        );
+
+        await ActivityLogService.logMarkedAsCompleted(
+          connectionRequest.blood_request_id,
+          req.user.id,
+          'Automatically completed when both parties confirmed donation completion'
+        );
+        
+        console.log(`🩸 AUTO-COMPLETION SUCCESS: Blood request ${connectionRequest.blood_request_id} marked as completed`);
+      } else {
+        console.log(`🩸 AUTO-COMPLETION SKIPPED: Blood request ${connectionRequest.blood_request_id} already completed`);
+      }
+    } else {
+      console.log(`🩸 AUTO-COMPLETION CONDITIONS NOT MET: donation_status="${status}", requester_confirmed=${connectionRequest.requester_confirmed}, blood_request_id=${connectionRequest.blood_request_id}`);
+    }
+
     // Log the donation completion
     await ActivityLogService.logDonationCompleted(
       connectionRequest.blood_request_id,
@@ -1029,7 +1069,7 @@ export const markDonationCompleted = async (req, res) => {
 
     res.json({ 
       success: true, 
-      message: `Donation marked as ${status} successfully`,
+      message: `Donation marked as ${status} successfully${status === 'completed' && connectionRequest.requester_confirmed === true ? '. Blood request automatically marked as completed.' : ''}`,
       connectionRequest
     });
   } catch (error) {
@@ -1094,6 +1134,45 @@ export const confirmDonationReceipt = async (req, res) => {
       attributes: ['id', 'full_name']
     });
 
+    // Check if both donor has completed donation AND requester has confirmed receipt
+    // If both conditions are met, automatically mark the blood request as completed
+    if (confirmed === true && connectionRequest.donation_status === 'completed') {
+      console.log(`🩸 AUTO-COMPLETION CHECK: Requester confirmed receipt and donor already completed donation for blood request ${connectionRequest.blood_request_id}`);
+      
+      const bloodRequest = connectionRequest.bloodRequest;
+      
+      // Only update if not already completed
+      if (bloodRequest.status !== 'completed') {
+        console.log(`🩸 AUTO-COMPLETING: Updating blood request ${connectionRequest.blood_request_id} status from "${bloodRequest.status}" to "completed"`);
+        
+        await bloodRequest.update({
+          status: 'completed',
+          completed_at: new Date()
+        });
+
+        // Log the automatic completion
+        await ActivityLogService.logStatusChanged(
+          connectionRequest.blood_request_id,
+          req.user.id,
+          bloodRequest.status,
+          'completed',
+          'Automatically completed when both donor and requester confirmed successful donation'
+        );
+
+        await ActivityLogService.logMarkedAsCompleted(
+          connectionRequest.blood_request_id,
+          req.user.id,
+          'Automatically completed when both parties confirmed donation completion'
+        );
+        
+        console.log(`🩸 AUTO-COMPLETION SUCCESS: Blood request ${connectionRequest.blood_request_id} marked as completed`);
+      } else {
+        console.log(`🩸 AUTO-COMPLETION SKIPPED: Blood request ${connectionRequest.blood_request_id} already completed`);
+      }
+    } else {
+      console.log(`🩸 AUTO-COMPLETION CONDITIONS NOT MET: confirmed=${confirmed}, donation_status="${connectionRequest.donation_status}", blood_request_id=${connectionRequest.blood_request_id}`);
+    }
+
     // Log the confirmation
     await ActivityLogService.logRequesterConfirmation(
       connectionRequest.blood_request_id,
@@ -1105,7 +1184,7 @@ export const confirmDonationReceipt = async (req, res) => {
 
     res.json({ 
       success: true, 
-      message: `Donation receipt ${confirmed ? 'confirmed' : 'denied'} successfully`,
+      message: `Donation receipt ${confirmed ? 'confirmed' : 'denied'} successfully${confirmed && connectionRequest.donation_status === 'completed' ? '. Blood request automatically marked as completed.' : ''}`,
       connectionRequest
     });
   } catch (error) {
@@ -1113,6 +1192,605 @@ export const confirmDonationReceipt = async (req, res) => {
     res.status(500).json({ 
       success: false, 
       message: error.message || 'Failed to confirm donation receipt'
+    });
+  }
+};
+
+// Get successful donations statistics and details (Admin only)
+export const getSuccessfulDonations = async (req, res) => {
+  try {
+    if (!req.user || req.user.role !== 'admin') {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Admin access required' 
+      });
+    }
+
+    const { page = 1, limit = 20, startDate, endDate, donor, requester, bloodType } = req.query;
+    const offset = (page - 1) * limit;
+
+    // Build where conditions for filtering
+    const connectionWhere = {
+      status: 'accepted',
+      donation_status: 'completed',
+      requester_confirmed: true
+    };
+
+    const bloodRequestWhere = {
+      status: 'completed'
+    };
+
+    // Date range filter
+    if (startDate || endDate) {
+      const dateFilter = {};
+      if (startDate) dateFilter[Op.gte] = new Date(startDate);
+      if (endDate) dateFilter[Op.lte] = new Date(endDate);
+      connectionWhere.donation_completed_at = dateFilter;
+    }
+
+    // Blood type filter
+    if (bloodType) {
+      bloodRequestWhere.blood_type = bloodType;
+    }
+
+    // Get successful donations with all related data
+    const successfulDonations = await models.ConnectionRequest.findAndCountAll({
+      where: connectionWhere,
+      include: [
+        {
+          model: models.User,
+          as: 'donor',
+          attributes: ['id', 'full_name', 'email', 'phone', 'blood_type', 'address'],
+          where: donor ? {
+            [Op.or]: [
+              { full_name: { [Op.iLike]: `%${donor}%` } },
+              { email: { [Op.iLike]: `%${donor}%` } }
+            ]
+          } : undefined
+        },
+        {
+          model: models.User,
+          as: 'requester',
+          attributes: ['id', 'full_name', 'email', 'phone', 'address'],
+          where: requester ? {
+            [Op.or]: [
+              { full_name: { [Op.iLike]: `%${requester}%` } },
+              { email: { [Op.iLike]: `%${requester}%` } }
+            ]
+          } : undefined
+        },
+        {
+          model: models.BloodRequest,
+          as: 'bloodRequest',
+          where: bloodRequestWhere,
+          attributes: [
+            'id', 'patient_name', 'patient_age', 'patient_gender', 'blood_type', 'rh_factor',
+            'quantity', 'urgency', 'hospital_name', 'hospital_address', 'purpose',
+            'required_date', 'province', 'district', 'municipality', 'completed_at',
+            'contact_name', 'contact_phone', 'relationship'
+          ]
+        }
+      ],
+      order: [['donation_completed_at', 'DESC']],
+      limit: parseInt(limit),
+      offset: parseInt(offset)
+    });
+
+    // Get statistics
+    const stats = await getSuccessfulDonationsStats();
+
+    res.json({
+      success: true,
+      data: {
+        donations: successfulDonations.rows,
+        pagination: {
+          total: successfulDonations.count,
+          page: parseInt(page),
+          limit: parseInt(limit),
+          totalPages: Math.ceil(successfulDonations.count / limit)
+        },
+        statistics: stats
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching successful donations:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: error.message || 'Failed to fetch successful donations'
+    });
+  }
+};
+
+// Helper function to get donation statistics
+const getSuccessfulDonationsStats = async () => {
+  try {
+    // Total successful donations
+    const totalDonations = await models.ConnectionRequest.count({
+      where: {
+        status: 'accepted',
+        donation_status: 'completed',
+        requester_confirmed: true
+      }
+    });
+
+    // This month's donations
+    const currentMonth = new Date();
+    currentMonth.setDate(1);
+    currentMonth.setHours(0, 0, 0, 0);
+    
+    const thisMonthDonations = await models.ConnectionRequest.count({
+      where: {
+        status: 'accepted',
+        donation_status: 'completed',
+        requester_confirmed: true,
+        donation_completed_at: {
+          [Op.gte]: currentMonth
+        }
+      }
+    });
+
+    // Active donors count (unique donors who have successfully donated)
+    const activeDonorsCount = await models.ConnectionRequest.count({
+      where: {
+        status: 'accepted',
+        donation_status: 'completed',
+        requester_confirmed: true
+      },
+      distinct: true,
+      col: 'donor_id'
+    });
+
+    // Top donors (donors with most successful donations)
+    const topDonors = await models.ConnectionRequest.findAll({
+      where: {
+        status: 'accepted',
+        donation_status: 'completed',
+        requester_confirmed: true
+      },
+      include: [{
+        model: models.User,
+        as: 'donor',
+        attributes: ['id', 'full_name', 'blood_type', 'email']
+      }],
+      attributes: [
+        'donor_id',
+        [sequelize.fn('COUNT', sequelize.col('donor_id')), 'donation_count']
+      ],
+      group: ['donor_id', 'donor.id', 'donor.full_name', 'donor.blood_type', 'donor.email'],
+      order: [[sequelize.fn('COUNT', sequelize.col('donor_id')), 'DESC']],
+      limit: 10
+    });
+
+    // Blood type distribution (unique blood types that have been donated)
+    const bloodTypeStats = await models.ConnectionRequest.findAll({
+      where: {
+        status: 'accepted',
+        donation_status: 'completed',
+        requester_confirmed: true
+      },
+      include: [{
+        model: models.BloodRequest,
+        as: 'bloodRequest',
+        attributes: []
+      }],
+      attributes: [
+        [sequelize.col('bloodRequest.blood_type'), 'blood_type'],
+        [sequelize.col('bloodRequest.rh_factor'), 'rh_factor'],
+        [sequelize.fn('COUNT', sequelize.col('ConnectionRequest.id')), 'count']
+      ],
+      group: [sequelize.col('bloodRequest.blood_type'), sequelize.col('bloodRequest.rh_factor')],
+      order: [[sequelize.fn('COUNT', sequelize.col('ConnectionRequest.id')), 'DESC']],
+      raw: true
+    });
+
+    // Monthly trend (last 6 months)
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+    
+    const monthlyTrend = await models.ConnectionRequest.findAll({
+      where: {
+        status: 'accepted',
+        donation_status: 'completed',
+        requester_confirmed: true,
+        donation_completed_at: {
+          [Op.gte]: sixMonthsAgo
+        }
+      },
+      attributes: [
+        [sequelize.fn('DATE_TRUNC', 'month', sequelize.col('donation_completed_at')), 'month'],
+        [sequelize.fn('COUNT', sequelize.col('ConnectionRequest.id')), 'count']
+      ],
+      group: [sequelize.fn('DATE_TRUNC', 'month', sequelize.col('donation_completed_at'))],
+      order: [[sequelize.fn('DATE_TRUNC', 'month', sequelize.col('donation_completed_at')), 'ASC']]
+    });
+
+    // Recent successful donations (last 5)
+    const recentDonations = await models.ConnectionRequest.findAll({
+      where: {
+        status: 'accepted',
+        donation_status: 'completed',
+        requester_confirmed: true
+      },
+      include: [
+        {
+          model: models.User,
+          as: 'donor',
+          attributes: ['id', 'full_name', 'blood_type']
+        },
+        {
+          model: models.BloodRequest,
+          as: 'bloodRequest',
+          attributes: ['patient_name', 'blood_type', 'rh_factor', 'hospital_name']
+        }
+      ],
+      order: [['donation_completed_at', 'DESC']],
+      limit: 5
+    });
+
+    return {
+      totalDonations,
+      thisMonthDonations,
+      activeDonorsCount,
+      topDonors: topDonors.map(donor => ({
+        ...donor.dataValues,
+        donor: donor.donor
+      })),
+      bloodTypeStats: bloodTypeStats.map(stat => ({
+        bloodType: `${stat.blood_type || 'Unknown'}${stat.rh_factor || ''}`,
+        count: parseInt(stat.count)
+      })),
+      uniqueBloodTypesCount: bloodTypeStats.length,
+      monthlyTrend: monthlyTrend.map(trend => ({
+        month: trend.dataValues.month,
+        count: parseInt(trend.dataValues.count)
+      })),
+      recentDonations
+    };
+  } catch (error) {
+    console.error('Error calculating donation statistics:', error);
+    return {
+      totalDonations: 0,
+      thisMonthDonations: 0,
+      activeDonorsCount: 0,
+      topDonors: [],
+      bloodTypeStats: [],
+      uniqueBloodTypesCount: 0,
+      monthlyTrend: [],
+      recentDonations: []
+    };
+  }
+};
+
+// Generate certificate for a successful donation (Admin only)
+export const generateCertificate = async (req, res) => {
+  try {
+    const { connectionRequestId } = req.params;
+    
+    if (!req.user || req.user.role !== 'admin') {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Admin access required' 
+      });
+    }
+
+    // Find the connection request with all related data
+    const connectionRequest = await models.ConnectionRequest.findOne({
+      where: { 
+        id: connectionRequestId,
+        status: 'accepted',
+        donation_status: 'completed',
+        requester_confirmed: true
+      },
+      include: [
+        {
+          model: models.User,
+          as: 'donor',
+          attributes: ['id', 'full_name', 'email', 'phone', 'blood_type', 'address', 'avatar']
+        },
+        {
+          model: models.BloodRequest,
+          as: 'bloodRequest',
+          attributes: [
+            'id', 'patient_name', 'patient_age', 'patient_gender', 'blood_type', 'rh_factor',
+            'quantity', 'urgency', 'hospital_name', 'hospital_address', 'purpose',
+            'required_date', 'province', 'district', 'municipality', 'completed_at'
+          ]
+        }
+      ]
+    });
+
+    if (!connectionRequest) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Successful donation not found' 
+      });
+    }
+
+    // Prepare donor data for certificate
+    const donorData = {
+      id: connectionRequest.donor.id,
+      full_name: connectionRequest.donor.full_name,
+      blood_type: connectionRequest.donor.blood_type,
+      email: connectionRequest.donor.email,
+      phone: connectionRequest.donor.phone,
+      address: connectionRequest.donor.address,
+      profilePhoto: connectionRequest.donor.avatar
+    };
+
+    // Generate certificate
+    const certificate = await CertificateService.generateCertificate(donorData, connectionRequest);
+
+    // Log certificate generation
+    await ActivityLogService.logCertificateGenerated(
+      connectionRequest.blood_request_id,
+      req.user.id,
+      connectionRequest.donor.full_name,
+      certificate.filename
+    );
+
+    res.json({
+      success: true,
+      message: 'Certificate generated successfully',
+      certificate: {
+        filename: certificate.filename,
+        url: certificate.url,
+        donorName: donorData.full_name,
+        generatedAt: new Date().toISOString()
+      }
+    });
+  } catch (error) {
+    console.error('Error generating certificate:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: error.message || 'Failed to generate certificate'
+    });
+  }
+};
+
+// Generate square certificate for social media sharing (Admin only)
+export const generateSquareCertificate = async (req, res) => {
+  try {
+    const { connectionRequestId } = req.params;
+    
+    if (!req.user || req.user.role !== 'admin') {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Admin access required' 
+      });
+    }
+
+    // Find the connection request with all related data
+    const connectionRequest = await models.ConnectionRequest.findOne({
+      where: { 
+        id: connectionRequestId,
+        status: 'accepted',
+        donation_status: 'completed',
+        requester_confirmed: true
+      },
+      include: [
+        {
+          model: models.User,
+          as: 'donor',
+          attributes: ['id', 'full_name', 'email', 'phone', 'blood_type', 'address', 'avatar']
+        },
+        {
+          model: models.BloodRequest,
+          as: 'bloodRequest',
+          attributes: [
+            'id', 'patient_name', 'patient_age', 'patient_gender', 'blood_type', 'rh_factor',
+            'quantity', 'urgency', 'hospital_name', 'hospital_address', 'purpose',
+            'required_date', 'province', 'district', 'municipality', 'completed_at'
+          ]
+        }
+      ]
+    });
+
+    if (!connectionRequest) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Successful donation not found' 
+      });
+    }
+
+    // Prepare donor data for square certificate
+    const donorData = {
+      id: connectionRequest.donor.id,
+      full_name: connectionRequest.donor.full_name,
+      blood_type: connectionRequest.donor.blood_type,
+      email: connectionRequest.donor.email,
+      phone: connectionRequest.donor.phone,
+      address: connectionRequest.donor.address,
+      profilePhoto: connectionRequest.donor.avatar
+    };
+
+    // Generate square certificate
+    const certificate = await CertificateService.generateSquareCertificate(donorData, connectionRequest);
+
+    // Log square certificate generation
+    await ActivityLogService.logCertificateGenerated(
+      connectionRequest.blood_request_id,
+      req.user.id,
+      connectionRequest.donor.full_name,
+      certificate.filename
+    );
+
+    res.json({
+      success: true,
+      message: 'Square certificate generated successfully',
+      certificate: {
+        filename: certificate.filename,
+        url: certificate.url,
+        donorName: donorData.full_name,
+        format: 'square',
+        size: '1080x1080',
+        optimizedFor: 'social_media',
+        generatedAt: new Date().toISOString()
+      }
+    });
+  } catch (error) {
+    console.error('Error generating square certificate:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: error.message || 'Failed to generate square certificate'
+    });
+  }
+};
+
+// Get all certificates for a donor (for donor's personal use)
+export const getDonorCertificates = async (req, res) => {
+  try {
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ 
+        success: false, 
+        message: 'Authentication required' 
+      });
+    }
+
+    // Find all successful donations by this donor
+    const successfulDonations = await models.ConnectionRequest.findAll({
+      where: { 
+        donor_id: req.user.id,
+        status: 'accepted',
+        donation_status: 'completed',
+        requester_confirmed: true
+      },
+      include: [
+        {
+          model: models.BloodRequest,
+          as: 'bloodRequest',
+          attributes: [
+            'id', 'patient_name', 'blood_type', 'rh_factor', 'quantity', 
+            'hospital_name', 'completed_at'
+          ]
+        }
+      ],
+      order: [['donation_completed_at', 'DESC']]
+    });
+
+    res.json({
+      success: true,
+      successfulDonations,
+      message: `Found ${successfulDonations.length} successful donations`
+    });
+  } catch (error) {
+    console.error('Error fetching donor certificates:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: error.message || 'Failed to fetch donor certificates'
+    });
+  }
+};
+
+// Bulk generate certificates for all successful donations (Admin only)
+export const bulkGenerateCertificates = async (req, res) => {
+  try {
+    if (!req.user || req.user.role !== 'admin') {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Admin access required' 
+      });
+    }
+
+    const { startDate, endDate, donorId } = req.query;
+
+    // Build where conditions
+    const connectionWhere = {
+      status: 'accepted',
+      donation_status: 'completed',
+      requester_confirmed: true
+    };
+
+    // Date range filter
+    if (startDate || endDate) {
+      const dateFilter = {};
+      if (startDate) dateFilter[Op.gte] = new Date(startDate);
+      if (endDate) dateFilter[Op.lte] = new Date(endDate);
+      connectionWhere.donation_completed_at = dateFilter;
+    }
+
+    // Specific donor filter
+    if (donorId) {
+      connectionWhere.donor_id = donorId;
+    }
+
+    // Get all successful donations
+    const successfulDonations = await models.ConnectionRequest.findAll({
+      where: connectionWhere,
+      include: [
+        {
+          model: models.User,
+          as: 'donor',
+          attributes: ['id', 'full_name', 'email', 'phone', 'blood_type', 'address', 'avatar']
+        },
+        {
+          model: models.BloodRequest,
+          as: 'bloodRequest',
+          attributes: [
+            'id', 'patient_name', 'patient_age', 'patient_gender', 'blood_type', 'rh_factor',
+            'quantity', 'urgency', 'hospital_name', 'hospital_address', 'purpose',
+            'required_date', 'province', 'district', 'municipality', 'completed_at'
+          ]
+        }
+      ],
+      order: [['donation_completed_at', 'DESC']]
+    });
+
+    const generatedCertificates = [];
+    const errors = [];
+
+    // Generate certificates for each donation
+    for (const donation of successfulDonations) {
+      try {
+        const donorData = {
+          id: donation.donor.id,
+          full_name: donation.donor.full_name,
+          blood_type: donation.donor.blood_type,
+          email: donation.donor.email,
+          phone: donation.donor.phone,
+          address: donation.donor.address,
+          profilePhoto: donation.donor.avatar
+        };
+
+        const certificate = await CertificateService.generateCertificate(donorData, donation);
+
+        generatedCertificates.push({
+          donationId: donation.id,
+          donorName: donorData.full_name,
+          certificate: certificate
+        });
+
+        // Log certificate generation
+        await ActivityLogService.logCertificateGenerated(
+          donation.blood_request_id,
+          req.user.id,
+          donation.donor.full_name,
+          certificate.filename
+        );
+      } catch (error) {
+        errors.push({
+          donationId: donation.id,
+          donorName: donation.donor.full_name,
+          error: error.message
+        });
+      }
+    }
+
+    res.json({
+      success: true,
+      message: `Generated ${generatedCertificates.length} certificates`,
+      generatedCertificates,
+      errors: errors.length > 0 ? errors : undefined,
+      summary: {
+        total: successfulDonations.length,
+        generated: generatedCertificates.length,
+        failed: errors.length
+      }
+    });
+  } catch (error) {
+    console.error('Error bulk generating certificates:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: error.message || 'Failed to bulk generate certificates'
     });
   }
 };

@@ -19,7 +19,12 @@ import {
   getBloodRequestActivityLogs,
   addAdminNote,
   markDonationCompleted,
-  confirmDonationReceipt
+  confirmDonationReceipt,
+  getSuccessfulDonations,
+  generateCertificate,
+  generateSquareCertificate,
+  getDonorCertificates,
+  bulkGenerateCertificates
 } from '../controllers/bloodRequestController.js';
 import multer from 'multer';
 import path from 'path';
@@ -69,6 +74,9 @@ router.put('/connections/:id/revert', protect, revertConnectionRequest);
 // GET /api/blood-requests - Admin only
 router.get('/', protect, authorize('admin'), getAllBloodRequests);
 
+// GET /api/blood-requests/successful-donations - Get successful donations (Admin only)
+router.get('/successful-donations', protect, authorize('admin'), getSuccessfulDonations);
+
 // GET /api/blood-requests/:id - User can view their own, Admin can view all
 router.get('/:id', protect, getBloodRequestById);
 
@@ -104,6 +112,19 @@ router.put('/connections/:id/donation', protect, markDonationCompleted);
 
 // PUT /api/blood-requests/connections/:id/confirm - Confirm donation receipt (Requester only)
 router.put('/connections/:id/confirm', protect, confirmDonationReceipt);
+
+// Certificate routes
+// POST /api/blood-requests/connections/:connectionRequestId/certificate - Generate certificate for successful donation (Admin only)
+router.post('/connections/:connectionRequestId/certificate', protect, authorize('admin'), generateCertificate);
+
+// POST /api/blood-requests/connections/:connectionRequestId/certificate/square - Generate square certificate for social media (Admin only)
+router.post('/connections/:connectionRequestId/certificate/square', protect, authorize('admin'), generateSquareCertificate);
+
+// GET /api/blood-requests/my-certificates - Get all certificates for current donor
+router.get('/my-certificates', protect, getDonorCertificates);
+
+// POST /api/blood-requests/certificates/bulk-generate - Bulk generate certificates (Admin only)
+router.post('/certificates/bulk-generate', protect, authorize('admin'), bulkGenerateCertificates);
 
 // GET /api/blood-requests/:id/prescription (secure prescription image)
 router.get('/:id/prescription', protect, authorize('admin'), async (req, res) => {

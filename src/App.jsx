@@ -28,6 +28,7 @@ import AdminUsersPage from './private/pages/AdminUsersPage.jsx';
 import AdminSettingsPage from './private/pages/AdminSettingsPage.jsx';
 import DonorListPage from './private/pages/DonorListPage.jsx';
 import AdminBloodRequestsPage from './private/pages/AdminBloodRequestsPage.jsx';
+import AdminDonationsPage from './private/pages/AdminDonationsPage.jsx';
 import AdminBloodRequestDetailPage from './private/pages/AdminBloodRequestDetailPage.jsx';
 import AdminUserProfilePage from './private/pages/AdminUserProfilePage.jsx';
 import BloodRequestDetailPage from './public/pages/BloodRequestDetailPage.jsx';
@@ -86,6 +87,7 @@ function App() {
                 <Route path="/admin/donors" element={<PrivateRoute requiredRole="admin"><DonorListPage isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} /></PrivateRoute>} />
                 <Route path="/admin/settings" element={<PrivateRoute requiredRole="admin"><AdminSettingsPage isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} /></PrivateRoute>} />
                 <Route path="/admin/blood-requests" element={<PrivateRoute requiredRole="admin"><AdminBloodRequestsPage isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} /></PrivateRoute>} />
+                <Route path="/admin/donations" element={<PrivateRoute requiredRole="admin"><AdminDonationsPage isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} /></PrivateRoute>} />
                 <Route path="/admin/blood-requests/:id" element={<PrivateRoute requiredRole="admin"><AdminBloodRequestDetailPage isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} /></PrivateRoute>} />
                 <Route path="*" element={<Navigate to="/" />} />
             </Routes>

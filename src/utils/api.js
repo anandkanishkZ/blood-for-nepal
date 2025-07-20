@@ -122,6 +122,58 @@ export const bloodRequestAPI = {
   // Confirm donation receipt (Requester only)
   confirmDonationReceipt: async (connectionId, confirmed, notes = '') => {
     return apiClient.put(`/blood-requests/connections/${connectionId}/confirm`, { confirmed, notes });
+  },
+
+  // Get successful donations with statistics (Admin only)
+  getSuccessfulDonations: async (filters = {}) => {
+    const params = new URLSearchParams();
+    if (filters.page) params.append('page', filters.page);
+    if (filters.limit) params.append('limit', filters.limit);
+    if (filters.startDate) params.append('startDate', filters.startDate);
+    if (filters.endDate) params.append('endDate', filters.endDate);
+    if (filters.donor) params.append('donor', filters.donor);
+    if (filters.requester) params.append('requester', filters.requester);
+    if (filters.bloodType) params.append('bloodType', filters.bloodType);
+    
+    const queryString = params.toString();
+    const url = `/blood-requests/successful-donations${queryString ? `?${queryString}` : ''}`;
+    return apiClient.get(url);
+  },
+
+  // Get dashboard statistics (Admin only) 
+  getDashboardStats: async () => {
+    return apiClient.get('/dashboard/stats');
+  },
+
+  // Certificate Generation APIs (Admin only)
+  // Generate certificate for a single successful donation
+  generateCertificate: async (connectionRequestId) => {
+    return apiClient.post(`/blood-requests/connections/${connectionRequestId}/certificate`);
+  },
+
+  // Bulk generate certificates for all successful donations
+  bulkGenerateCertificates: async (filters = {}) => {
+    const params = new URLSearchParams();
+    if (filters.startDate) params.append('startDate', filters.startDate);
+    if (filters.endDate) params.append('endDate', filters.endDate);
+    if (filters.donorId) params.append('donorId', filters.donorId);
+    
+    const queryString = params.toString();
+    const url = `/blood-requests/certificates/bulk-generate${queryString ? `?${queryString}` : ''}`;
+    return apiClient.post(url);
+  },
+
+  // Get donor's own certificates (For donors)
+  getMyCertificates: async () => {
+    return apiClient.get('/blood-requests/my-certificates');
+  },
+
+  // Get certificate download URL
+  getCertificateUrl: (certificateUrl) => {
+    if (!certificateUrl) return null;
+    // Remove leading slash if present and construct full URL
+    const cleanUrl = certificateUrl.startsWith('/') ? certificateUrl.slice(1) : certificateUrl;
+    return `${API_BASE_URL.replace('/api/v1', '')}/${cleanUrl}`;
   }
 };
 

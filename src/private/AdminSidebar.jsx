@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Menu, X, Users, LayoutDashboard, LogOut, ExternalLink, Moon, Sun, Settings, Heart, Droplets } from 'lucide-react';
+import { Menu, X, Users, LayoutDashboard, LogOut, ExternalLink, Moon, Sun, Settings, Heart, Droplets, Award } from 'lucide-react';
 import logoTransparent from '../assets/logo-transparent.png';
 import { useAuth } from '../public/context/AuthContext';
 
@@ -27,6 +27,11 @@ const navLinks = [
     to: '/admin/blood-requests',
     label: 'Blood Requests',
     icon: <Droplets className="w-5 h-5 mr-2" />,
+  },
+  {
+    to: '/admin/donations',
+    label: 'Successful Donations',
+    icon: <Award className="w-5 h-5 mr-2" />,
   },
   {
     to: '/admin/settings',

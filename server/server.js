@@ -104,6 +104,13 @@ app.use('/uploads', (req, res, next) => {
   next();
 }, express.static(path.join(process.cwd(), 'uploads')));
 
+// Certificate test page (development only)
+if (config.NODE_ENV === 'development') {
+  app.get('/certificate-test', (req, res) => {
+    res.sendFile(path.join(process.cwd(), 'certificate-test.html'));
+  });
+}
+
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.status(200).json({
