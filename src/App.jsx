@@ -31,6 +31,7 @@ import AdminBloodRequestsPage from './private/pages/AdminBloodRequestsPage.jsx';
 import AdminDonationsPage from './private/pages/AdminDonationsPage.jsx';
 import AdminBloodRequestDetailPage from './private/pages/AdminBloodRequestDetailPage.jsx';
 import AdminUserProfilePage from './private/pages/AdminUserProfilePage.jsx';
+import AdminMediaManagementPage from './private/pages/AdminMediaManagementPage.jsx';
 import BloodRequestDetailPage from './public/pages/BloodRequestDetailPage.jsx';
 import 'react-toastify/dist/ReactToastify.css';
 import './App.css';
@@ -87,6 +88,7 @@ function App() {
                 <Route path="/admin/donors" element={<PrivateRoute requiredRole="admin"><DonorListPage isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} /></PrivateRoute>} />
                 <Route path="/admin/settings" element={<PrivateRoute requiredRole="admin"><AdminSettingsPage isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} /></PrivateRoute>} />
                 <Route path="/admin/blood-requests" element={<PrivateRoute requiredRole="admin"><AdminBloodRequestsPage isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} /></PrivateRoute>} />
+                <Route path="/admin/media" element={<PrivateRoute requiredRole="admin"><AdminMediaManagementPage isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} /></PrivateRoute>} />
                 <Route path="/admin/donations" element={<PrivateRoute requiredRole="admin"><AdminDonationsPage isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} /></PrivateRoute>} />
                 <Route path="/admin/blood-requests/:id" element={<PrivateRoute requiredRole="admin"><AdminBloodRequestDetailPage isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} /></PrivateRoute>} />
                 <Route path="*" element={<Navigate to="/" />} />
