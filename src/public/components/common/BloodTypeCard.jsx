@@ -7,6 +7,7 @@ const BloodTypeCard = ({
   rhFactor,
   count,
   isAvailable = true,
+  loading = false,
   onClick,
 }) => {
   const { t } = useLanguage();
@@ -28,6 +29,20 @@ const BloodTypeCard = ({
     'O': 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-100',
   }[type];
   
+  if (loading) {
+    return (
+      <div className="relative flex flex-col items-center justify-center p-4 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+        <div className="animate-pulse">
+          <div className="rounded-full w-14 h-14 bg-gray-300 dark:bg-gray-600"></div>
+          <div className="mt-3 text-center">
+            <div className="h-5 w-16 bg-gray-300 dark:bg-gray-600 rounded mb-2"></div>
+            <div className="h-4 w-12 bg-gray-300 dark:bg-gray-600 rounded"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  
   return (
     <div 
       onClick={onClick}
@@ -46,7 +61,7 @@ const BloodTypeCard = ({
         </h3>
         {count !== undefined && (
           <p className="text-sm text-gray-600 dark:text-gray-400">
-            {count} {count === 1 ? 'unit' : 'units'}
+            {count} {count === 1 ? 'donor' : 'donors'}
           </p>
         )}
       </div>

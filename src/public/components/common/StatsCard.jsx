@@ -8,6 +8,7 @@ const StatsCard = ({
   icon,
   change,
   isPositiveChange = true,
+  loading = false,
 }) => {
   const { t } = useLanguage();
   
@@ -25,7 +26,11 @@ const StatsCard = ({
               </dt>
               <dd>
                 <div className="text-lg font-medium text-gray-900 dark:text-white">
-                  {value.toLocaleString()}
+                  {loading ? (
+                    <div className="animate-pulse bg-gray-300 dark:bg-gray-600 h-6 w-16 rounded"></div>
+                  ) : (
+                    value.toLocaleString()
+                  )}
                 </div>
               </dd>
             </dl>
@@ -35,21 +40,27 @@ const StatsCard = ({
       {change !== undefined && (
         <div className="bg-gray-50 dark:bg-gray-700 px-5 py-3">
           <div className="text-sm">
-            <span
-              className={`font-medium flex items-center gap-1 ${
-                isPositiveChange
-                  ? 'text-green-600 dark:text-green-400'
-                  : 'text-red-600 dark:text-red-400'
-              }`}
-            >
-              {isPositiveChange ? (
-                <TrendingUp className="w-4 h-4" />
-              ) : (
-                <TrendingDown className="w-4 h-4" />
-              )}
-              {Math.abs(change)}%
-            </span>{' '}
-            <span className="text-gray-500 dark:text-gray-400">from last month</span>
+            {loading ? (
+              <div className="animate-pulse bg-gray-300 dark:bg-gray-600 h-4 w-20 rounded"></div>
+            ) : (
+              <>
+                <span
+                  className={`font-medium flex items-center gap-1 ${
+                    isPositiveChange
+                      ? 'text-green-600 dark:text-green-400'
+                      : 'text-red-600 dark:text-red-400'
+                  }`}
+                >
+                  {isPositiveChange ? (
+                    <TrendingUp className="w-4 h-4" />
+                  ) : (
+                    <TrendingDown className="w-4 h-4" />
+                  )}
+                  {Math.abs(change)}%
+                </span>{' '}
+                <span className="text-gray-500 dark:text-gray-400">from last month</span>
+              </>
+            )}
           </div>
         </div>
       )}

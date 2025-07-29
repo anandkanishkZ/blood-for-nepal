@@ -1,8 +1,8 @@
-import React from 'react';
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Droplets, Users, Calendar, Heart, Search, AlertCircle, BookOpen, Activity } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
+import { bloodRequestAPI } from '../../utils/api';
 import EmergencyButton from '../components/common/EmergencyButton';
 import StatsCard from '../components/common/StatsCard';
 import BloodTypeCard from '../components/common/BloodTypeCard';
@@ -10,8 +10,19 @@ import BloodTypeCard from '../components/common/BloodTypeCard';
 const HomePage = () => {
   const { t } = useLanguage();
   const [selectedLocation, setSelectedLocation] = useState(null);
-  
-  const bloodTypes = [
+  const [stats, setStats] = useState({
+    donors: 1568,
+    requests: 427,
+    donations: 312,
+    livesSaved: 298,
+    changes: {
+      donors: 12,
+      requests: 8,
+      donations: 5,
+      lives: 15
+    }
+  });
+  const [bloodInventory, setBloodInventory] = useState([
     { type: 'A', rhFactor: '+', count: 125, isAvailable: true },
     { type: 'A', rhFactor: '-', count: 14, isAvailable: true },
     { type: 'B', rhFactor: '+', count: 87, isAvailable: true },
@@ -20,7 +31,62 @@ const HomePage = () => {
     { type: 'AB', rhFactor: '-', count: 3, isAvailable: false },
     { type: 'O', rhFactor: '+', count: 156, isAvailable: true },
     { type: 'O', rhFactor: '-', count: 21, isAvailable: true },
-  ];
+  ]);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch public statistics on component mount
+  useEffect(() => {
+    const fetchPublicStats = async () => {
+      try {
+        setLoading(true);
+        console.log('🚀 Fetching public stats from frontend...');
+        const response = await bloodRequestAPI.getPublicStats();
+        console.log('📡 Public stats response:', response);
+        
+        if (response.success) {
+          const { data, meta } = response;
+          console.log('📊 Stats data received:', data);
+          
+          // Update statistics with real database values
+          setStats({
+            donors: data.donors || 0,
+            requests: data.requests || 0,
+            donations: data.donations || 0,
+            livesSaved: data.livesSaved || 0,
+            changes: {
+              donors: data.changes?.donors || 0,
+              requests: data.changes?.requests || 0,
+              donations: data.changes?.donations || 0,
+              lives: data.changes?.lives || 0
+            }
+          });
+
+          // Update blood inventory with real database values
+          if (data.bloodInventory && Array.isArray(data.bloodInventory)) {
+            console.log('🩸 Blood inventory received:', data.bloodInventory);
+            setBloodInventory(data.bloodInventory);
+          } else {
+            console.warn('⚠️ No blood inventory data received, using defaults');
+          }
+          
+          // Handle demo data indicator
+          if (meta && !meta.isRealData) {
+            console.log('ℹ️ Using demo data:', meta.message);
+            // Data is loaded successfully, even if it's demo data
+          }
+        } else {
+          console.error('❌ API returned error:', response.message);
+        }
+      } catch (error) {
+        console.error('❌ Error fetching public statistics:', error);
+        // Keep default values if API fails, but log the error
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPublicStats();
+  }, []);
   
   return (
     <div className="bg-white dark:bg-gray-900 min-h-screen">
@@ -65,31 +131,35 @@ const HomePage = () => {
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
           <StatsCard 
             title="statDonors" 
-            value={1568} 
+            value={stats.donors} 
             icon={<Users className="h-6 w-6" />} 
-            change={12} 
-            isPositiveChange={true} 
+            change={Math.abs(stats.changes.donors)} 
+            isPositiveChange={stats.changes.donors >= 0} 
+            loading={loading}
           />
           <StatsCard 
             title="statRequests" 
-            value={427} 
+            value={stats.requests} 
             icon={<Droplets className="h-6 w-6" />} 
-            change={8} 
-            isPositiveChange={true} 
+            change={Math.abs(stats.changes.requests)} 
+            isPositiveChange={stats.changes.requests >= 0} 
+            loading={loading}
           />
           <StatsCard 
             title="statDonations" 
-            value={312} 
+            value={stats.donations} 
             icon={<Calendar className="h-6 w-6" />} 
-            change={5} 
-            isPositiveChange={true} 
+            change={Math.abs(stats.changes.donations)} 
+            isPositiveChange={stats.changes.donations >= 0} 
+            loading={loading}
           />
           <StatsCard 
             title="statLivesSaved" 
-            value={298} 
+            value={stats.livesSaved} 
             icon={<Heart className="h-6 w-6" />} 
-            change={15} 
-            isPositiveChange={true} 
+            change={Math.abs(stats.changes.lives)} 
+            isPositiveChange={stats.changes.lives >= 0} 
+            loading={loading}
           />
         </div>
       </div>
@@ -109,13 +179,14 @@ const HomePage = () => {
         </div>
         
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-8">
-          {bloodTypes.map((bloodType) => (
+          {bloodInventory.map((bloodType) => (
             <BloodTypeCard
               key={`${bloodType.type}${bloodType.rhFactor}`}
               type={bloodType.type}
               rhFactor={bloodType.rhFactor}
               count={bloodType.count}
               isAvailable={bloodType.isAvailable}
+              loading={loading}
             />
           ))}
         </div>

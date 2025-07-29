@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Menu, X, Droplets, Moon, Sun, User, LogIn, UserPlus, LogOut, UserCircle, Shield, CornerUpLeft, Users } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
 import { useAuth } from '../../context/AuthContext';
@@ -26,6 +26,12 @@ const Navbar = ({ isDarkMode, toggleDarkMode }) => {
   const { t } = useLanguage();
   const { user, isAuthenticated, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Helper function to check if a path is active
+  const isActivePath = (path) => {
+    return location.pathname === path;
+  };
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -73,7 +79,7 @@ const Navbar = ({ isDarkMode, toggleDarkMode }) => {
   }, []);
 
   return (
-    <nav className="sticky top-0 z-50 bg-white dark:bg-gray-900 shadow-lg border-b border-white/20 dark:border-gray-800/30 transition-all duration-300">
+        <nav className="sticky top-0 z-50 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md shadow-sm border-b border-gray-100 dark:border-gray-800 transition-all duration-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">          {/* Logo */}
           <div className="flex items-center">
@@ -91,27 +97,41 @@ const Navbar = ({ isDarkMode, toggleDarkMode }) => {
           </div>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-4">
+          <div className="hidden md:flex items-center space-x-1">
             {[
               { path: '/', label: t('navHome') },
               { path: '/register-donor', label: t('navRegisterDonor') },
-              { path: '/request', label: 'Request Blood' },
-              { path: '/find-donor', label: (<>Find Donor</>) },
+              { path: '/request', label: t('navRequestBlood') },
+              { path: '/find-donor', label: t('navFindDonor') },
               { path: '/education', label: t('navEducation') }
             ].map(({ path, label }) => (
               <Link
                 key={path}
                 to={path}
-                className="text-gray-700 hover:text-red-600 dark:text-gray-300 dark:hover:text-red-500 px-3 py-2 rounded-md text-sm font-medium flex items-center"
+                className={`relative px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                  isActivePath(path)
+                    ? 'text-red-600 dark:text-red-400 bg-red-50/80 dark:bg-red-900/20'
+                    : 'text-gray-600 hover:text-red-600 dark:text-gray-300 dark:hover:text-red-400 hover:bg-gray-50 dark:hover:bg-gray-800/50'
+                }`}
               >
                 {label}
+                {isActivePath(path) && (
+                  <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-4 h-0.5 bg-red-600 dark:bg-red-400 rounded-full"></div>
+                )}
               </Link>
             ))}
             <Link
               to="/emergency"
-              className="text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20 px-3 py-2 rounded-md text-sm font-medium"
+              className={`relative px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                isActivePath('/emergency')
+                  ? 'text-red-700 dark:text-red-300 bg-red-100 dark:bg-red-900/30'
+                  : 'text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20'
+              }`}
             >
               {t('navEmergency')}
+              {isActivePath('/emergency') && (
+                <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-4 h-0.5 bg-red-700 dark:bg-red-300 rounded-full"></div>
+              )}
             </Link>            <LanguageSelector />            {/* User Menu */}
             <div className="relative" ref={userMenuRef}>
               <button
@@ -278,27 +298,45 @@ const Navbar = ({ isDarkMode, toggleDarkMode }) => {
 
       {/* Mobile Navigation */}
       {isMenuOpen && (
-        <div className="md:hidden bg-white dark:bg-gray-900 px-2 pt-2 pb-3 space-y-1 shadow-2xl border-t border-gray-200 dark:border-gray-700">
+        <div className="md:hidden bg-white/95 dark:bg-gray-900/95 backdrop-blur-md px-4 py-3 space-y-1 shadow-sm border-t border-gray-100 dark:border-gray-800">
           {[
             { path: '/', label: t('navHome') },
             { path: '/register-donor', label: t('navRegisterDonor') },
-            { path: '/request', label: 'Request Blood' },
-            { path: '/find-donor', label: (<><Users className="w-4 h-4 mr-1" /> Find Donor</>) },
+            { path: '/request', label: t('navRequestBlood') },
+            { path: '/find-donor', label: (<><Users className="w-4 h-4 mr-1" /> {t('navFindDonor')}</>) },
             { path: '/education', label: t('navEducation') }
           ].map(({ path, label }) => (
             <Link
               key={path}
               to={path}
-              className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-red-600 hover:bg-gray-50 dark:text-gray-300 dark:hover:text-red-500 dark:hover:bg-gray-800 flex items-center"
+              className={`relative block px-3 py-2.5 rounded-lg text-base font-medium flex items-center transition-all duration-200 ${
+                isActivePath(path)
+                  ? 'text-red-600 dark:text-red-400 bg-red-50/80 dark:bg-red-900/20'
+                  : 'text-gray-600 hover:text-red-600 hover:bg-gray-50 dark:text-gray-300 dark:hover:text-red-400 dark:hover:bg-gray-800/50'
+              }`}
             >
-              {label}
+              {isActivePath(path) && (
+                <div className="absolute left-0 top-1/2 transform -translate-y-1/2 w-1 h-4 bg-red-600 dark:bg-red-400 rounded-full"></div>
+              )}
+              <span className="flex items-center">
+                {label}
+              </span>
             </Link>
           ))}
           <Link
             to="/emergency"
-            className="block px-3 py-2 rounded-md text-base font-medium text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
+            className={`relative block px-3 py-2.5 rounded-lg text-base font-medium transition-all duration-200 ${
+              isActivePath('/emergency')
+                ? 'text-red-700 dark:text-red-300 bg-red-100 dark:bg-red-900/30'
+                : 'text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20'
+            }`}
           >
-            {t('navEmergency')}
+            {isActivePath('/emergency') && (
+              <div className="absolute left-0 top-1/2 transform -translate-y-1/2 w-1 h-4 bg-red-700 dark:bg-red-300 rounded-full"></div>
+            )}
+            <span className="font-medium">
+              {t('navEmergency')}
+            </span>
           </Link>
           
           {/* Mobile User Menu */}

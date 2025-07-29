@@ -140,6 +140,11 @@ export const bloodRequestAPI = {
     return apiClient.get(url);
   },
 
+  // Get public homepage statistics (No authentication required)
+  getPublicStats: async () => {
+    return apiClient.get('/dashboard/public-stats');
+  },
+
   // Get dashboard statistics (Admin only) 
   getDashboardStats: async () => {
     return apiClient.get('/dashboard/stats');

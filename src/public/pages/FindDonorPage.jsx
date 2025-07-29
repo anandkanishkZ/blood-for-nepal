@@ -296,6 +296,25 @@ const FindDonorPage = () => {
             ))}
           </select>
         </div>
+        
+        {/* Blood Request Information Banner */}
+        <div className="mb-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
+          <div className="flex items-center gap-2 mb-2">
+            <Info className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
+            <h3 className="font-semibold text-yellow-800 dark:text-yellow-200">Need Blood?</h3>
+          </div>
+          <p className="text-sm text-yellow-700 dark:text-yellow-300">
+            To request blood from donors, please create a blood request from the{' '}
+            <Link 
+              to="/request" 
+              className="font-semibold underline hover:text-yellow-900 dark:hover:text-yellow-100 transition-colors"
+            >
+              Request Blood page
+            </Link>
+            . Once you have an active blood request, you can connect with compatible donors here.
+          </p>
+        </div>
+        
         {loading ? (
           <div className="flex justify-center items-center h-64">
             <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-red-500"></div>
