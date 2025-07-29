@@ -82,7 +82,7 @@ const AdminBloodRequestDetailPage = ({ isDarkMode, toggleDarkMode }) => {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex">
       <AdminSidebar isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} />
-      <main className="flex-1 max-w-3xl mx-auto w-full px-8 py-10">
+      <main className="flex-1 max-w-6xl mx-auto w-full px-8 py-10">
         <div className="flex items-center mb-8 gap-4">
           <button
             className="bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg p-2"

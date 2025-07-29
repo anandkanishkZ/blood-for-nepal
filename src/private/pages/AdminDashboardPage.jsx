@@ -60,7 +60,7 @@ const AdminDashboardPage = ({ isDarkMode, toggleDarkMode }) => {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex">
       <AdminSidebar isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} />
-      <main className="flex-1 max-w-5xl mx-auto w-full px-8 py-10">
+      <main className="flex-1 max-w-6xl mx-auto w-full px-8 py-10">
         <h1 className="text-3xl font-bold mb-6 text-gray-900 dark:text-white">Admin Dashboard</h1>
         {error && <div className="text-red-600 dark:text-red-400 mb-4">{error}</div>}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-10">

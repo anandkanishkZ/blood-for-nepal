@@ -3,7 +3,6 @@ import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
 import cookieParser from 'cookie-parser';
-import rateLimit from 'express-rate-limit';
 import morgan from 'morgan';
 import path from 'path';
 
@@ -61,19 +60,19 @@ app.use(cors({
   optionsSuccessStatus: 200
 }));
 
-// Rate limiting
-const limiter = rateLimit({
-  windowMs: config.rateLimit.windowMs,
-  max: config.rateLimit.max,
-  message: {
-    success: false,
-    message: 'Too many requests from this IP, please try again later.'
-  },
-  standardHeaders: true,
-  legacyHeaders: false
-});
+// Rate limiting - Tiered approach
+import { 
+  generalApiLimiter, 
+  authLimiter, 
+  adminLimiter, 
+  uploadLimiter 
+} from './middleware/rateLimiting.js';
 
-app.use('/api/', limiter);
+// Apply different rate limits to different endpoints
+app.use('/api/v1/auth/', authLimiter);
+app.use('/api/v1/admin/', adminLimiter);
+app.use('/api/v1/upload/', uploadLimiter);
+app.use('/api/', generalApiLimiter);
 
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));

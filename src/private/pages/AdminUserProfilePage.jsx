@@ -189,7 +189,7 @@ const AdminUserProfilePage = ({ isDarkMode, toggleDarkMode }) => {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex">
       <AdminSidebar isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} />
-      <main className="flex-1 max-w-5xl mx-auto w-full px-8 py-10">
+      <main className="flex-1 max-w-6xl mx-auto w-full px-8 py-10">
         {/* Header */}
         <div className="flex items-center mb-8 gap-4">
           <button

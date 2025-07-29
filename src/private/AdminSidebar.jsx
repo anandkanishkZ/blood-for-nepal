@@ -34,14 +34,14 @@ const navLinks = [
     icon: <Award className="w-5 h-5 mr-2" />,
   },
   {
-    to: '/admin/settings',
-    label: 'Settings',
-    icon: <Settings className="w-5 h-5 mr-2" />,
-  },
-  {
     to: '/admin/media',
     label: 'Media Management',
     icon: <FolderOpen className="w-5 h-5 mr-2" />,
+  },
+  {
+    to: '/admin/settings',
+    label: 'Settings',
+    icon: <Settings className="w-5 h-5 mr-2" />,
   },
 ];
 
@@ -99,11 +99,11 @@ const AdminSidebar = ({ isDarkMode, toggleDarkMode }) => {
 
       {/* Sidebar */}
       <aside
-        className={`fixed top-0 left-0 h-full w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 z-50 transform transition-transform duration-300 md:static md:translate-x-0 ${open ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}
+        className={`fixed top-0 left-0 h-screen w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 z-50 transform transition-transform duration-300 md:sticky md:translate-x-0 flex flex-col ${open ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}
         aria-label="Admin sidebar"
       >
         {/* Close button for mobile */}
-        <div className="flex items-center justify-between md:justify-center px-4 py-6 border-b border-gray-100 dark:border-gray-800">
+        <div className="flex items-center justify-between md:justify-center px-4 py-6 border-b border-gray-100 dark:border-gray-800 flex-shrink-0">
           <div className="flex items-center">
             <img src={logoTransparent} alt="Logo" className="h-10 w-10 mr-2" />
             <span className="text-2xl font-bold text-red-600 dark:text-red-400 hidden md:inline">Admin Panel</span>
@@ -116,7 +116,9 @@ const AdminSidebar = ({ isDarkMode, toggleDarkMode }) => {
             <X className="w-6 h-6 text-gray-600 dark:text-gray-300" />
           </button>
         </div>
-        <nav className="flex flex-col gap-1 mt-8 px-4">
+        
+        {/* Navigation Links - Scrollable area */}
+        <nav className="flex flex-col gap-1 mt-8 px-4 flex-1 overflow-y-auto">
           {navLinks.map(link => (
             <Link
               key={link.to}
@@ -133,9 +135,9 @@ const AdminSidebar = ({ isDarkMode, toggleDarkMode }) => {
             </Link>
           ))}
         </nav>
-        <div className="flex-1" />
-        {/* Logout button at the bottom */}
-        <div className="px-4 pb-8">
+        
+        {/* Logout button at the bottom - Fixed */}
+        <div className="px-4 pb-8 pt-4 border-t border-gray-100 dark:border-gray-800 flex-shrink-0">
           <button
             onClick={handleLogout}
             className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-medium text-base bg-red-600 hover:bg-red-700 text-white transition-colors shadow-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"

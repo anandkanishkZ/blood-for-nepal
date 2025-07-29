@@ -106,7 +106,7 @@ const AdminSettingsPage = ({ isDarkMode, toggleDarkMode }) => {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex">
       <AdminSidebar isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} />
-      <main className="flex-1 max-w-7xl mx-auto w-full px-8 py-10">
+      <main className="flex-1 max-w-6xl mx-auto w-full px-8 py-10">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
             Admin Settings

@@ -1506,6 +1506,20 @@ export const generateCertificate = async (req, res) => {
       });
     }
 
+    // If certificate already exists, return the existing certificate URL
+    if (connectionRequest.certificate_filename) {
+      return res.json({
+        success: true,
+        message: 'Certificate already generated',
+        certificate: {
+          filename: connectionRequest.certificate_filename,
+          url: `/uploads/certificates/${connectionRequest.certificate_filename}`,
+          donorName: connectionRequest.donor.full_name,
+          generatedAt: connectionRequest.donation_completed_at || null
+        }
+      });
+    }
+
     // Prepare donor data for certificate
     const donorData = {
       id: connectionRequest.donor.id,
@@ -1519,6 +1533,10 @@ export const generateCertificate = async (req, res) => {
 
     // Generate certificate
     const certificate = await CertificateService.generateCertificate(donorData, connectionRequest);
+
+    // Save certificate filename to the connection request
+    connectionRequest.certificate_filename = certificate.filename;
+    await connectionRequest.save();
 
     // Log certificate generation
     await ActivityLogService.logCertificateGenerated(

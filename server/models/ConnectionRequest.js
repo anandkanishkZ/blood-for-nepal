@@ -57,6 +57,10 @@ class ConnectionRequest extends Model {
         type: DataTypes.TEXT,
         allowNull: true
       },
+      certificate_filename: {
+        type: DataTypes.STRING,
+        allowNull: true
+      },
       requester_confirmed: {
         type: DataTypes.BOOLEAN,
         allowNull: true,

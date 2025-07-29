@@ -167,7 +167,7 @@ const DonorListPage = ({ isDarkMode, toggleDarkMode }) => {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex">
       <AdminSidebar isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} />
-      <main className="flex-1 max-w-7xl mx-auto w-full px-8 py-10">
+      <main className="flex-1 max-w-6xl mx-auto w-full px-8 py-10">
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-2 text-gray-900 dark:text-white">Active Donors</h1>
           <p className="text-gray-600 dark:text-gray-400">Manage and view all registered blood donors</p>

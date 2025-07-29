@@ -259,11 +259,16 @@ const AdminDonationsPage = ({ isDarkMode, toggleDarkMode }) => {
 
   if (loading && !donationsData) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="flex items-center gap-3">
-          <RefreshCw className="w-6 h-6 animate-spin text-red-600" />
-          <span className="text-lg">Loading donations data...</span>
-        </div>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex">
+        <AdminSidebar isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} />
+        <main className="flex-1 max-w-6xl mx-auto w-full px-8 py-10">
+          <div className="flex items-center justify-center min-h-[50vh]">
+            <div className="flex items-center gap-3">
+              <RefreshCw className="w-6 h-6 animate-spin text-red-600" />
+              <span className="text-lg text-gray-900 dark:text-white">Loading donations data...</span>
+            </div>
+          </div>
+        </main>
       </div>
     );
   }
@@ -275,7 +280,7 @@ const AdminDonationsPage = ({ isDarkMode, toggleDarkMode }) => {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex">
       <AdminSidebar isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} />
-      <main className="flex-1 max-w-7xl mx-auto w-full px-8 py-10">
+      <main className="flex-1 max-w-6xl mx-auto w-full px-8 py-10">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center justify-between">
@@ -337,45 +342,65 @@ const AdminDonationsPage = ({ isDarkMode, toggleDarkMode }) => {
 
         {/* Statistics Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Donations</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.totalDonations || 0}</p>
+          {loading ? (
+            // Loading skeleton for statistics cards
+            <>
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm animate-pulse">
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-2"></div>
+                      <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
+                    </div>
+                    <div className="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                  </div>
+                </div>
+              ))}
+            </>
+          ) : (
+            // Actual statistics cards
+            <>
+              <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Donations</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.totalDonations || 0}</p>
+                  </div>
+                  <Heart className="w-8 h-8 text-red-600" />
+                </div>
               </div>
-              <Heart className="w-8 h-8 text-red-600" />
-            </div>
-          </div>
 
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">This Month</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.thisMonthDonations || 0}</p>
+              <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">This Month</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.thisMonthDonations || 0}</p>
+                  </div>
+                  <Calendar className="w-8 h-8 text-blue-600" />
+                </div>
               </div>
-              <Calendar className="w-8 h-8 text-blue-600" />
-            </div>
-          </div>
 
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Active Donors</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.activeDonorsCount || 0}</p>
+              <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Active Donors</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.activeDonorsCount || 0}</p>
+                  </div>
+                  <User className="w-8 h-8 text-green-600" />
+                </div>
               </div>
-              <User className="w-8 h-8 text-green-600" />
-            </div>
-          </div>
 
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Blood Types</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.uniqueBloodTypesCount || 0}</p>
+              <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Blood Types</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.uniqueBloodTypesCount || 0}</p>
+                  </div>
+                  <Droplets className="w-8 h-8 text-purple-600" />
+                </div>
               </div>
-              <Droplets className="w-8 h-8 text-purple-600" />
-            </div>
-          </div>
+            </>
+          )}
         </div>
 
         {/* Filters Panel */}
@@ -510,12 +535,32 @@ const AdminDonationsPage = ({ isDarkMode, toggleDarkMode }) => {
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Recent Donations</h3>
               <span className="text-sm text-gray-600 dark:text-gray-400">
-                Showing {donations.length} of {pagination.total || 0} donations
+                {loading ? (
+                  <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-32 animate-pulse"></div>
+                ) : (
+                  `Showing ${donations.length} of ${pagination.total || 0} donations`
+                )}
               </span>
             </div>
           </div>
 
-          {donations.length === 0 ? (
+          {loading ? (
+            // Loading skeleton for table
+            <div className="p-6">
+              <div className="space-y-4">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <div key={i} className="flex items-center space-x-4 animate-pulse">
+                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-24"></div>
+                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-32"></div>
+                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-20"></div>
+                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-28"></div>
+                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-24"></div>
+                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-16"></div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : donations.length === 0 ? (
             <div className="p-8 text-center">
               <Heart className="w-12 h-12 text-gray-400 mx-auto mb-4" />
               <p className="text-gray-600 dark:text-gray-400">No successful donations found.</p>
@@ -605,23 +650,35 @@ const AdminDonationsPage = ({ isDarkMode, toggleDarkMode }) => {
                               <Eye className="w-4 h-4" />
                               View
                             </button>
-                            <button
-                              onClick={() => generateSingleCertificate(donation)}
-                              disabled={generatingCertificate === donation.id}
-                              className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                              {generatingCertificate === donation.id ? (
-                                <>
-                                  <RefreshCw className="w-4 h-4 animate-spin" />
-                                  Generating...
-                                </>
-                              ) : (
-                                <>
-                                  <Award className="w-4 h-4" />
-                                  Certificate
-                                </>
-                              )}
-                            </button>
+                            {donation.certificate_filename ? (
+                              <a
+                                href={bloodRequestAPI.getCertificateUrl(`/uploads/certificates/${donation.certificate_filename}`)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300 flex items-center gap-1"
+                              >
+                                <Award className="w-4 h-4" />
+                                View Certificate
+                              </a>
+                            ) : (
+                              <button
+                                onClick={() => generateSingleCertificate(donation)}
+                                disabled={generatingCertificate === donation.id}
+                                className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                {generatingCertificate === donation.id ? (
+                                  <>
+                                    <RefreshCw className="w-4 h-4 animate-spin" />
+                                    Generating...
+                                  </>
+                                ) : (
+                                  <>
+                                    <Award className="w-4 h-4" />
+                                    Generate Certificate
+                                  </>
+                                )}
+                              </button>
+                            )}
                           </div>
                         </td>
                       </tr>
