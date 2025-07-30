@@ -1,3 +1,7 @@
+// Load environment variables first
+import dotenv from 'dotenv';
+dotenv.config();
+
 // Function to get email config dynamically
 const getEmailConfig = () => ({
   host: process.env.EMAIL_HOST || 'smtp.gmail.com',
@@ -56,21 +60,11 @@ const config = {
     return getEmailConfig();
   },
 
-  // SMS Configuration (BiraSMS)
-  biraSms: {
-    apiKey: process.env.BIRA_SMS_API_KEY || '2A8F2440B52A27B469CFEDE4A2CDD39D',
-    routeId: process.env.BIRA_SMS_ROUTE_ID || 'SI_Alert',
-    username: process.env.BIRA_SMS_USERNAME || 'zwickytechnology@gmail.com',
-    password: process.env.BIRA_SMS_PASSWORD || 'Nepal@12345',
-    campaign: process.env.BIRA_SMS_CAMPAIGN || 'Default',
-    baseUrl: 'https://user.birasms.com/api/smsapi',
-    enableDevMode: process.env.BIRA_SMS_DEV_MODE !== 'false', // Enable by default in dev
-    enabled: process.env.BIRA_SMS_ENABLED !== 'false'
-  },
+
 
   // SMS Configuration (AakashSMS)
   aakashSms: {
-    authToken: process.env.AAKASH_SMS_AUTH_TOKEN || 'a244d4a6d3b11b15dd09f6f5c8002007d4c6df08cc2b8116ffdaad138c062443',
+    authToken: process.env.AAKASH_SMS_AUTH_TOKEN,
     baseUrl: process.env.AAKASH_SMS_BASE_URL || 'https://sms.aakashsms.com/sms/v3/send',
     enableDevMode: process.env.AAKASH_SMS_DEV_MODE !== 'false', // Enable by default in dev
     enabled: process.env.AAKASH_SMS_ENABLED !== 'false'
@@ -78,8 +72,8 @@ const config = {
 
   // SMS Provider Configuration
   smsProvider: {
-    active: process.env.SMS_PROVIDER_ACTIVE || 'bira', // 'bira' or 'aakash'
-    enableFailover: process.env.SMS_PROVIDER_FAILOVER === 'true', // Enable failover between providers
+    active: process.env.SMS_PROVIDER_ACTIVE || 'aakash', // Only 'aakash' supported now
+    enableFailover: process.env.SMS_PROVIDER_FAILOVER === 'true',
   },
 
   // Node Environment

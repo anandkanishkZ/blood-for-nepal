@@ -1,4 +1,3 @@
-import biraSmsService from './smsService.js';
 import aakashSmsService from './aakashSmsService.js';
 import config from '../config/index.js';
 
@@ -9,11 +8,10 @@ import config from '../config/index.js';
 class SmsProviderManager {
   constructor() {
     this.providers = {
-      bira: biraSmsService,
       aakash: aakashSmsService
     };
     
-    this.activeProvider = config.smsProvider.active || 'bira';
+    this.activeProvider = config.smsProvider.active || 'aakash';
     this.enableFailover = config.smsProvider.enableFailover || false;
   }
 
@@ -32,11 +30,6 @@ class SmsProviderManager {
       active: this.activeProvider,
       enableFailover: this.enableFailover,
       providers: {
-        bira: {
-          name: 'BiraSMS',
-          enabled: config.biraSms.enabled || true,
-          devMode: config.biraSms.enableDevMode || false
-        },
         aakash: {
           name: 'AakashSMS',
           enabled: config.aakashSms.enabled || true,

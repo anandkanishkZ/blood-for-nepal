@@ -106,10 +106,10 @@ class AakashSmsService {
       
       // Provide user-friendly error messages
       if (error.message.includes('Invalid Nepal mobile number')) {
-        throw new Error('कृपया मान्य नेपाली मोबाइल नम्बर प्रविष्ट गर्नुहोस्। (Please enter a valid Nepal mobile number)');
+        throw new Error('Please enter a valid Nepal mobile number)');
       }
       
-      throw new Error('SMS पठाउन असफल भयो। कृपया फेरि प्रयास गर्नुहोस्। (Failed to send SMS. Please try again.)');
+      throw new Error('Failed to send SMS. Please try again.');
     }
   }
 

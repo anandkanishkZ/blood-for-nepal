@@ -18,7 +18,10 @@ import {
   switchVerificationMethod,
   getVerificationStatus,
   verifyEmailLink,
-  getDonors
+  getDonors,
+  forgotPassword,
+  resetPassword,
+  verifyResetToken
 } from '../controllers/authController.js';
 import { protect, authorize, requireVerification } from '../middleware/auth.js';
 import {
@@ -26,7 +29,9 @@ import {
   validateDonorRegister,
   validateLogin,
   validateProfileUpdate,
-  validatePasswordChange
+  validatePasswordChange,
+  validateForgotPassword,
+  validateResetPassword
 } from '../validators/authValidators.js';
 
 const router = express.Router();
@@ -35,6 +40,11 @@ const router = express.Router();
 router.post('/register', validateRegister, register);
 router.post('/login', validateLogin, login);
 router.get('/donors', getDonors); // Public endpoint for finding donors
+
+// Password reset routes (public)
+router.post('/forgot-password', validateForgotPassword, forgotPassword);
+router.post('/reset-password', validateResetPassword, resetPassword);
+router.get('/verify-reset-token/:token', verifyResetToken);
 
 // Verification routes (public)
 router.post('/verify', verifyUser);

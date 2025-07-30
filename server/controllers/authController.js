@@ -6,6 +6,7 @@ import config from '../config/index.js';
 import { AppError } from '../utils/errorHandler.js';
 import verificationService from '../services/verificationService.js';
 import emailService from '../services/emailService.js';
+import passwordResetService from '../services/passwordResetService.js';
 
 const { User } = models;
 
@@ -922,6 +923,100 @@ export const verifyEmailLink = async (req, res, next) => {
     console.error('Error constructor:', error.constructor.name);
     console.error('Error message:', error.message);
     console.error('Error stack:', error.stack);
+    next(error);
+  }
+};
+
+// @desc    Forgot password - send reset link/OTP
+// @route   POST /api/v1/auth/forgot-password
+// @access  Public
+export const forgotPassword = async (req, res, next) => {
+  try {
+    // Check for validation errors
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return next(new AppError('Validation failed', 400, errors.array()));
+    }
+
+    const { email, method = 'email' } = req.body;
+
+    console.log(`🔑 Password reset requested for: ${email} via ${method}`);
+
+    const result = await passwordResetService.sendPasswordReset(email, method);
+
+    res.status(200).json({
+      success: true,
+      message: result.message,
+      data: {
+        method: result.method,
+        expiresIn: result.expiresIn,
+        destination: result.destination,
+        provider: result.provider,
+        isDevelopmentMode: result.isDevelopmentMode,
+        otp: result.otp // Only included in development mode for SMS
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Forgot password error:', error);
+    next(error);
+  }
+};
+
+// @desc    Reset password with token/OTP
+// @route   POST /api/v1/auth/reset-password
+// @access  Public
+export const resetPassword = async (req, res, next) => {
+  try {
+    // Check for validation errors
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return next(new AppError('Validation failed', 400, errors.array()));
+    }
+
+    const { token, password, method = 'email' } = req.body;
+
+    console.log(`🔄 Password reset attempt with ${method} method`);
+
+    const result = await passwordResetService.resetPassword(token, password, method);
+
+    res.status(200).json({
+      success: true,
+      message: result.message,
+      data: {
+        method: result.method,
+        redirectTo: '/login'
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Reset password error:', error);
+    next(error);
+  }
+};
+
+// @desc    Verify reset token
+// @route   GET /api/v1/auth/verify-reset-token/:token
+// @access  Public
+export const verifyResetToken = async (req, res, next) => {
+  try {
+    const { token } = req.params;
+
+    console.log(`🔍 Verifying reset token`);
+
+    const result = await passwordResetService.verifyResetToken(token);
+
+    res.status(200).json({
+      success: result.valid,
+      message: result.message,
+      data: result.valid ? {
+        expiresIn: result.expiresIn,
+        user: result.user
+      } : null
+    });
+
+  } catch (error) {
+    console.error('❌ Verify reset token error:', error);
     next(error);
   }
 };

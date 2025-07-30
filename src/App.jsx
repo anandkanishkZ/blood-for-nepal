@@ -16,6 +16,8 @@ import SmsVerificationNeededPage from './public/pages/SmsVerificationNeededPage'
 import VerificationPage from './public/pages/VerificationPage';
 import EmailVerificationPage from './public/pages/EmailVerificationPage';
 import EmailVerificationNeededPage from './public/pages/EmailVerificationNeededPage';
+import ForgotPasswordPage from './public/pages/ForgotPasswordPage';
+import ResetPasswordPage from './public/pages/ResetPasswordPage';
 import DashboardPage from './public/pages/DashboardPage';
 import DonorRegistrationPage from './public/pages/DonorRegistrationPage';
 import RequestBloodPage from './public/pages/RequestBloodPage';
@@ -68,6 +70,8 @@ function App() {
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/register" element={<NewRegisterPage />} />
                 <Route path="/register-old" element={<RegisterPage />} />
+                <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+                <Route path="/reset-password" element={<ResetPasswordPage />} />
                 <Route path="/verify/:userId" element={<VerificationPage />} />
                 <Route path="/verify-email" element={<EmailVerificationPage />} />
                 <Route path="/choose-verification-method" element={<VerificationMethodSelectionPage />} />

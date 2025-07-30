@@ -267,3 +267,67 @@ export const validateDonorRegister = [
     .isBoolean()
     .withMessage('Emergency availability must be true or false')
 ];
+
+// Validation rules for forgot password
+export const validateForgotPassword = [
+  body('method')
+    .optional()
+    .isIn(['email', 'sms'])
+    .withMessage('Reset method must be either email or sms'),
+
+  // Either email or phone is required depending on method
+  body().custom((value, { req }) => {
+    const method = req.body.method || 'email'; // Default to email if no method specified
+    
+    if (method === 'email') {
+      if (!req.body.email) {
+        throw new Error('Email is required for email reset method');
+      }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(req.body.email)) {
+        throw new Error('Please provide a valid email address');
+      }
+    } else if (method === 'sms') {
+      if (!req.body.phone) {
+        throw new Error('Phone number is required for SMS reset method');
+      }
+      if (!/^\d{10}$/.test(req.body.phone.replace(/\D/g, ''))) {
+        throw new Error('Please provide a valid 10-digit phone number');
+      }
+    }
+    
+    return true;
+  })
+];
+
+// Validation rules for reset password
+export const validateResetPassword = [
+  body('token')
+    .trim()
+    .notEmpty()
+    .withMessage('Reset token is required')
+    .isLength({ min: 6 })
+    .withMessage('Reset token must be at least 6 characters'),
+
+  body('password')
+    .notEmpty()
+    .withMessage('New password is required')
+    .isLength({ min: 6 })
+    .withMessage('Password must be at least 6 characters long')
+    .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
+    .withMessage('Password must contain at least one uppercase letter, one lowercase letter, and one number'),
+
+  body('confirmPassword')
+    .notEmpty()
+    .withMessage('Please confirm your password')
+    .custom((value, { req }) => {
+      if (value !== req.body.password) {
+        throw new Error('Passwords do not match');
+      }
+      return true;
+    }),
+
+  body('method')
+    .optional()
+    .isIn(['email', 'sms'])
+    .withMessage('Reset method must be either email or sms')
+];
