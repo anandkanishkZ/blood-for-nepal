@@ -89,14 +89,14 @@ const HomePage = () => {
   }, []);
   
   return (
-    <div className="bg-white dark:bg-gray-900 min-h-screen">
+    <div className="bg-white dark:bg-gray-900 min-h-screen overflow-x-hidden max-w-full">
       {/* Hero Section */}
       <div className="relative bg-red-700 dark:bg-red-900">
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute inset-0 bg-red-700 dark:bg-red-900 opacity-90"></div>
           <div className="absolute -bottom-4 left-0 right-0 h-20 bg-gradient-to-t from-red-800 to-transparent"></div>
         </div>
-        <div className="relative w-full py-24 px-4 sm:py-32 sm:px-6 lg:px-8 text-center">
+        <div className="relative w-full py-24 px-4 sm:py-32 sm:px-6 lg:px-8 text-center max-w-7xl mx-auto">
           <h1 className="text-4xl font-extrabold tracking-tight text-white sm:text-5xl lg:text-6xl">
             {t('heroTitle')}
           </h1>
@@ -127,7 +127,7 @@ const HomePage = () => {
       </div>
       
       {/* Statistics Section */}
-      <div className="w-full px-4 sm:px-6 lg:px-8 -mt-12 relative z-10">
+      <div className="w-full px-4 sm:px-6 lg:px-8 -mt-12 relative z-10 max-w-7xl mx-auto">
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
           <StatsCard 
             title="statDonors" 
@@ -165,7 +165,7 @@ const HomePage = () => {
       </div>
       
       {/* Blood Inventory Section */}
-      <div className="w-full px-4 sm:px-6 lg:px-8 py-12 bg-white dark:bg-gray-900">
+      <div className="w-full px-4 sm:px-6 lg:px-8 py-12 bg-white dark:bg-gray-900 max-w-7xl mx-auto">
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Blood Inventory Status</h2>
         
         <div className="mb-6">
@@ -178,7 +178,7 @@ const HomePage = () => {
           )}
         </div>
         
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-8">
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8">
           {bloodInventory.map((bloodType) => (
             <BloodTypeCard
               key={`${bloodType.type}${bloodType.rhFactor}`}
@@ -194,7 +194,7 @@ const HomePage = () => {
       
       {/* Features Section */}
       <div className="bg-white dark:bg-gray-800 py-12">
-        <div className="w-full px-4 sm:px-6 lg:px-8">
+        <div className="w-full px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-8 text-center">Our Features</h2>
           
           <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">

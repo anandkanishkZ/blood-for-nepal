@@ -23,6 +23,7 @@ import DonorRegistrationPage from './public/pages/DonorRegistrationPage';
 import RequestBloodPage from './public/pages/RequestBloodPage';
 import EducationPage from './public/pages/EducationPage';
 import EmergencyPage from './public/pages/EmergencyPage';
+import AboutPage from './public/pages/AboutPage';
 import PrivateRoute from './private/PrivateRoute.jsx';
 import ViewProfilePage from './private/pages/ViewProfilePage.jsx';
 import AdminDashboardPage from './private/pages/AdminDashboardPage.jsx';
@@ -62,7 +63,7 @@ function App() {
 
     return (
         <AuthProvider>
-            <div>
+            <div className="overflow-x-hidden max-w-full">
                 <ScrollToTop />
                 {!isAdminRoute && <Navbar isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} />}
                 <Routes>
@@ -86,6 +87,7 @@ function App() {
                 <Route path="/find-donor" element={<FindDonorPage />} />
                 <Route path="/education" element={<EducationPage />} />
                 <Route path="/emergency" element={<EmergencyPage />} />
+                <Route path="/about" element={<AboutPage />} />
                 <Route path="/admin" element={<PrivateRoute requiredRole="admin"><AdminDashboardPage isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} /></PrivateRoute>} />
                 <Route path="/admin/users" element={<PrivateRoute requiredRole="admin"><AdminUsersPage isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} /></PrivateRoute>} />
                 <Route path="/admin/users/:id" element={<PrivateRoute requiredRole="admin"><AdminUserProfilePage isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} /></PrivateRoute>} />

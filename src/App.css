@@ -2,6 +2,41 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Global overflow prevention for mobile responsiveness */
+html, body {
+  overflow-x: hidden;
+  max-width: 100vw;
+}
+
+#root {
+  overflow-x: hidden;
+  max-width: 100vw;
+}
+
+/* Additional mobile fixes */
+* {
+  box-sizing: border-box;
+}
+
+/* Prevent table overflow on mobile */
+.table-container {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Ensure images don't overflow containers */
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Responsive text that doesn't overflow */
+.responsive-text {
+  word-wrap: break-word;
+  word-break: break-word;
+  hyphens: auto;
+}
 
 :root {
   --color-primary: 220, 38, 38;
