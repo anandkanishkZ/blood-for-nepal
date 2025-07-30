@@ -109,14 +109,14 @@ const Footer = () => {
                 <ul className="space-y-3">
                   <li className="flex items-start">
                     <Mail className="h-5 w-5 text-gray-500 dark:text-gray-400 mr-2 mt-0.5 flex-shrink-0" />
-                    <a href="mailto:info@bloodfornepal.org" className="text-sm sm:text-base text-gray-600 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-500 transition-colors duration-200 break-all">
-                      info@bloodfornepal.org
+                    <a href="mailto:info@bfn.org" className="text-sm sm:text-base text-gray-600 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-500 transition-colors duration-200 break-all">
+                      info@bfn.org
                     </a>
                   </li>
                   <li className="flex items-center">
                     <Phone className="h-5 w-5 text-gray-500 dark:text-gray-400 mr-2 flex-shrink-0" />
-                    <a href="tel:+9771234567890" className="text-sm sm:text-base text-gray-600 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-500 transition-colors duration-200">
-                      +977 1234 567 890
+                    <a href="tel:+9779825733821" className="text-sm sm:text-base text-gray-600 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-500 transition-colors duration-200">
+                      +977 9825733821
                     </a>
                   </li>
                 </ul>
@@ -130,14 +130,14 @@ const Footer = () => {
                     </Link>
                   </li>
                   <li>
-                    <a href="#" className="text-sm sm:text-base text-gray-600 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-500 transition-colors duration-200">
+                    <Link to="/privacy-policy" className="text-sm sm:text-base text-gray-600 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-500 transition-colors duration-200">
                       {t('footerPrivacy')}
-                    </a>
+                    </Link>
                   </li>
                   <li>
-                    <a href="#" className="text-sm sm:text-base text-gray-600 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-500 transition-colors duration-200">
+                    <Link to="/terms-of-service" className="text-sm sm:text-base text-gray-600 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-500 transition-colors duration-200">
                       {t('footerTerms')}
-                    </a>
+                    </Link>
                   </li>
                 </ul>
               </div>
