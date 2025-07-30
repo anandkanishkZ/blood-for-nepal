@@ -251,7 +251,7 @@ const Navbar = ({ isDarkMode, toggleDarkMode }) => {
                           onClick={() => setIsUserMenuOpen(false)}
                         >
                           <Droplets className="h-4 w-4 mr-3 text-gray-500" />
-                          My Donations
+                          My Dashboard
                         </Link>
                         {isAuthenticated && user?.role === 'admin' && (
                           <Link
@@ -525,7 +525,7 @@ const Navbar = ({ isDarkMode, toggleDarkMode }) => {
                       <div className="p-2 bg-red-200/20 backdrop-blur-sm rounded-xl mr-3 border border-red-300/30">
                         <Droplets className="h-4 w-4 text-red-300 drop-shadow-sm" />
                       </div>
-                      <span className="drop-shadow-sm">My Donations</span>
+                      <span className="drop-shadow-sm">My Dashboard</span>
                     </Link>
                     {user?.role === 'admin' && (
                       <Link
