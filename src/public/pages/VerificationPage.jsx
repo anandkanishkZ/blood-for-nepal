@@ -12,7 +12,7 @@ if (!showToast || typeof showToast !== 'object') {
   console.error('❌ showToast is not properly imported or is not an object');
 }
 
-// NOTE: This file uses react-otp-input@2 for OTP entry. Install with: npm install react-otp-input@2
+// NOTE: Using input-otp for OTP entry; no react-otp-input needed.
 
 // Safe toast utility function with delay to prevent race conditions
 const safeShowToast = {
